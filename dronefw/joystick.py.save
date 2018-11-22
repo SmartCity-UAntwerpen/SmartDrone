@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+#code type val
+#dpad left 16 3 -1
+#dpad x center 16 3 0
+#dpad right 16 3 1
+#dpad up 17 3 -1
+#dpad down 17 3 1
+#dpad y center 17 3 0
+
+#x 304 01 X
+#b 306 01 X
+#Y 307 01 X
+#A 305 01 X
+
+import evdev
+dev=evdev.InputDevice("/dev/input/event0")
+
+while (True):
+   for event in dev.read_loop():
+     
