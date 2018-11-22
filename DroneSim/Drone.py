@@ -33,6 +33,7 @@ class Drone:
 
     def arm(self):
         self.status = DroneStatusEnum.Armed
+        self.black_box.info("Drone armed.")
 
     def takeOff(self, height=DEFAULT_HEIGHT, velocity=VELOCITY):
         if self.status == DroneStatusEnum.Armed:

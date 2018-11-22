@@ -5,6 +5,7 @@ drone = Drone.Drone()
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+
 def exit(signal, frame):
     print("Closing socket...")
     s.close()
@@ -12,34 +13,39 @@ def exit(signal, frame):
     print("Simulator tured off.")
     sys.exit(0)
 
-def perform_action(command):
-    """ Expecting a json message structered as followes:
+
+def perform_action(command, conn):
+    """ Expecting a json message:
         {
             "command": ex. "move" or "turn",
-            "pos": (x,y,z),
-            "velocity": velocity
-            "angle": angle          # angle not always necessary, only if the command is turn
+            "goal": (x,y,z),
+            "velocity": velocity,
+            "angle": angle,          # angle not always necessary, only if the command is turn
+            "height": height
         }
     """
     message = json.loads(command.decode())
     if message["command"] == "move":
-        goal = message["pos"]
+        goal = message["goal"]
         drone.moveDistance(goal[0],goal[1],goal[2],message["velocity"])
     elif message["command"] == "arm":
         drone.arm()
     elif message["command"] == "takeoff":
-        drone.takeOff(0.4, message["velocity"])
+        drone.takeOff(message["height"], message["velocity"])
+
+    conn.send(b'ACK')
 
 
 if __name__ == "__main__":
-     s.bind(("127.0.0.1", 9000))
-     s.listen(1)
+    s.bind(("127.0.0.1", int(sys.argv[1])))
+    s.listen(1)
 
-     signal.signal(signal.SIGINT, exit)
-     conn, addr = s.accept()  # wait for a connection
-     data = '123'
-     while len(data):
-         data = conn.recv(1024)     # recieve data with buffer of size 1024
-         if not data:
-             exit(1,1)
-         perform_action(data)
+    signal.signal(signal.SIGINT, exit)
+    drone.black_box.info("Drone simulator started.")
+
+    conn, addr = s.accept()  # wait for a connection
+    while 1:
+        data = conn.recv(1024)     # recieve data with buffer of size 1024
+        if not data:
+            exit(1,1)
+        perform_action(data, conn)
