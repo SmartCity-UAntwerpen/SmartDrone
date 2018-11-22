@@ -33,106 +33,92 @@ class Drone:
 
     def arm(self):
         self.status = DroneStatusEnum.Armed
-        pass
 
     def takeOff(self, height=DEFAULT_HEIGHT, velocity=VELOCITY):
         if self.status == DroneStatusEnum.Armed:
+            self.status = DroneStatusEnum.Flying
             self.black_box.info("Taking off to %0.2f m" % height)
             self.moveDistance(0,0,height,velocity)
-            self.status = DroneStatusEnum.Flying
         else:
             self.black_box.warn("Drone not armed! Arm drone before takeoff.")
 
     def land(self):
         self.status = DroneStatusEnum.Idle
-        pass
 
     def forward(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving forwards by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(distance,0,0,velocity)
+        self.moveDistance(distance,0,0,velocity)
 
     def back(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving backwards by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(-distance,0,0,velocity)
+        self.moveDistance(-distance,0,0,velocity)
 
     def left(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving left by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(0,distance,0,velocity)
+        self.moveDistance(0,distance,0,velocity)
 
     def right(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving right by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(0,-distance,0,velocity)
+        self.moveDistance(0,-distance,0,velocity)
 
     def up(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving up by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(0,0,distance,velocity)
+        self.moveDistance(0,0,distance,velocity)
 
     def down(self, distance=None, velocity=VELOCITY):
-        if distance is None:
-            self.black_box.warn("Specify the distance to move.")
+        if distance is None or distance < 0:
+            self.black_box.warn("Specify the (positive) distance to move.")
             return
 
         self.black_box.info("Moving down by %0.2f m." % distance)
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        if self.check_before_flight(distance, velocity):
-            # check complete and true so fly
-            self.moveDistance(0,0,-distance,velocity)
+        self.moveDistance(0,0,-distance,velocity)
 
     def turnLeft(self, angle_degrees=None, rate=RATE):
         if angle_degrees is None:
             self.black_box.warn("Specify the angle to turn.")
             return
 
-        self.black_box.info("Turning left by %0.2f m" % angle_degrees)
+        self.black_box.info("Turning left by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
-        self.yaw += angle_degrees
+        self.yaw += angle_degrees * math.pi / 180
         time.sleep(flight_time)
 
     def turnRight(self, angle_degrees=None, rate=RATE):
@@ -140,9 +126,9 @@ class Drone:
             self.black_box.warn("Specify the angle to turn.")
             return
 
-        self.black_box.info("Turning right by %0.2f m" % angle_degrees)
+        self.black_box.info("Turning right by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
-        self.yaw -= angle_degrees
+        self.yaw -= angle_degrees * math.pi / 180
         time.sleep(flight_time)
 
     def center(self):
@@ -156,6 +142,9 @@ class Drone:
         distance = math.sqrt(distance_x_m * distance_x_m +
                              distance_y_m + distance_y_m +
                              distance_z_m * distance_z_m)
+
+        if not self.check_before_flight(distance, velocity):
+            return
 
         velocity += np.random.normal(GAUSSIAN_MEAN,GAUSSIAN_SIGMA)
 
@@ -180,11 +169,12 @@ class Drone:
         time.sleep(flight_time)
 
     def printInfo(self):
-        print("Drone[%d]: Pos: (%.2f, %.2f, %.2f)" % (self.id, self.x, self.y, self.z))
+        print("Drone[%d]: \nPos: (%.2f, %.2f, %.2f) \nAngles: \n\t- pitch: %.2f \n\t- yaw: %.2f \n\t- roll: %.2f"
+              % (self.id, self.x, self.y, self.z,self.pitch,self.yaw,self.roll))
 
     def check_before_flight(self, distance, velocity):
         if distance < 0 or velocity < 0:
-            self.black_box.error("Given distance or velocity is not valid (<0).")
+            self.black_box.error("Distance or velocity is not valid (<0).")
             return False
         if self.status is not DroneStatusEnum.Flying:
             self.black_box.error("Drone has not taken off yet!")
