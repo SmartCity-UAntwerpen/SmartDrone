@@ -12,9 +12,9 @@ def distance(m1, m2):
 class FlightPlanner:
 
     def __init__(self):
+        self.maxFlightTime = 1.0
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
-        self.maxFlightTime = 1.0
 
     def makeGraph(self, verbose=0):
         # TODO replace this method to the backbone and let the FlightPlanner import the map from the backbone
@@ -57,7 +57,8 @@ class FlightPlanner:
                 delta_y = path[index + 1].y - path[index].y
                 delta_z = path[index + 1].z - path[index].z
                 # TODO replace by json and send to controller
-                print("move to id= ", path[index + 1].id, "(", delta_x, ";", delta_y, ";", delta_z, ")")
+                print("move to id= ", path[index + 1].id,)
+                print("moveDistance(", delta_x, ",", delta_y, ",", delta_z, ")")
 
     def setMarkers(self):
         # get the markers from the database and store them in an array
@@ -70,9 +71,13 @@ class FlightPlanner:
         markers = [m0, m1, m2, m3, m4]
         return markers
 
-    def getMarker(self,index):
+    def getMarker(self, index):
         # just for testing
         return self.markers[index]
 
-    if __name__ == '__main__':
-        pass
+
+if __name__ == '__main__':
+    f = FlightPlanner()
+    m1 = f.getMarker(0)
+    m2 = f.getMarker(3)
+    f.findPath(m1, m2)
