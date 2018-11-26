@@ -44,6 +44,11 @@ class FlightPlanner:
         # use dijkstra to find the path between marker m1 and m2
         # if no path exist give a message
         # otherwise cut the path into small instructions
+
+        flight_plan = {
+            "commands": [],
+        }
+
         try:
             path = nx.dijkstra_path(self.G, m1, m2)
         except NetworkXNoPath:
@@ -57,8 +62,12 @@ class FlightPlanner:
                 delta_y = path[index + 1].y - path[index].y
                 delta_z = path[index + 1].z - path[index].z
                 # TODO replace by json and send to controller
+                command = {}
+                flight_plan["commands"].append(command)
                 print("move to id= ", path[index + 1].id,)
                 print("moveDistance(", delta_x, ",", delta_y, ",", delta_z, ")")
+
+        return flight_plan
 
     def setMarkers(self):
         # get the markers from the database and store them in an array

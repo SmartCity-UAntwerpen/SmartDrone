@@ -1,6 +1,7 @@
 
 import socket, time, json, sys, signal
 
+
 class Controller:
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -8,7 +9,14 @@ class Controller:
     def __init__(self,ip,port):
         self.ip = ip
         self.port = port
-        self.s.connect((self.ip, self.port))
+        #self.s.connect((self.ip, self.port))
+
+    def start_controller(self):
+        pass
+        # subscribe to backend, recieve flightplan or not?
+            # when no flightplan ==> create flightplanner
+            # else parse flightplane
+        # wait for drone to connect with tcp
 
     def send(self,data):
         self.s.send(bytearray(data, 'utf-8'))
@@ -17,8 +25,9 @@ class Controller:
     def __del__(self):
         self.s.close()
 
-time.sleep(1)   # wait 1 second for the drone to boot, so the tcp connection won't be refused #FIXME: catch the tcp connection refuse
-controller = Controller("localhost", int(sys.argv[1]))
+#time.sleep(1)   # wait 1 second for the drone to boot, so the tcp connection won't be refused #FIXME: catch the tcp connection refuse
+controller = Controller("localhost", 5000)
+
 
 def exit(signal, frame):
     print("Controller closed.")
@@ -26,27 +35,6 @@ def exit(signal, frame):
     del controller
     sys.exit(0)
 
+
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, exit)
-
-    message = {
-        "command": "arm",
-    }
-    controller.send(json.dumps(message))
-    time.sleep(2)
-
-    message = {
-        "command": "takeoff",
-        "velocity": .5,
-        "height": 5
-    }
-    controller.send(json.dumps(message))
-    time.sleep(2)
-
-    message = {
-        "command": "move",
-        "goal": (1,1,0),
-        "velocity":  0.5
-    }
-    controller.send(json.dumps(message))
-    controller.send(json.dumps(message))
