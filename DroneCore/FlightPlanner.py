@@ -10,18 +10,27 @@ def distance(m1, m2):
 
 
 class FlightPlanner:
-    # plans flights
     def __init__(self):
+        """
+        sets the maxflight time
+        sets the markers
+        makes a graph
+        """
         self.maxFlightTime = 1.0
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
 
-    def makeGraph(self, verbose=0):
+    def makeGraph(self, verbose=False):
+        """
+        make a graph and fill the nodes with all the markers
+        for every marker check al the other markers if the distance is smaller then a maxFlightTime
+        add that marker as neighbour <=> there is a path between the markers with a weight equaling the distance
+        this method could be improved if you make the path not bidirectional
+        :param verbose: for debug prints the graph
+        :return: the graph
+        """
         # TODO replace this method to the backbone and let the FlightPlanner import the map from the backbone
-        # make a graph and fill the nodes with all the markers
-        # for every marker check al the other markers if the distance is smaller then a maxFlightTime
-        # add that marker as neighbour <=> there is a path between the markers with a weight equaling the distance
-        # this method could be improved if you make the path not bidirectional
+
         G = nx.Graph()
         G.add_nodes_from(self.markers)
         for currentMarker in self.markers:
@@ -32,7 +41,7 @@ class FlightPlanner:
                         G.add_edge(currentMarker, index, weight=d)
 
         # for debug purpuses you can print de graph
-        if verbose == 1:
+        if verbose:
             pos = nx.spring_layout(G)
             nx.draw(G, with_labels=True)
             plt.savefig("graph.png")
@@ -41,9 +50,14 @@ class FlightPlanner:
         return G
 
     def findPath(self, m1, m2):
-        # use dijkstra to find the path between marker m1 and m2
-        # if no path exist give a message
-        # otherwise cut the path into small instructions
+        """
+        use dijkstra to find the path between marker m1 and m2
+        if no path exist return an empty message
+        otherwise cut the path into small instructions and return the instructions
+        :param m1: marker 1 the startpoint
+        :param m2: marker 2 the endpoint
+        :return: json with instructions
+        """
 
         flight_plan = {
             "commands": [],
@@ -100,7 +114,10 @@ class FlightPlanner:
         return flight_plan
 
     def setMarkers(self):
-        # get the markers from the database and store them in an array
+        """
+        get the markers from the database and store them in an array
+        :return: array with markers
+        """
         # TODO read markers from database
         m0 = Marker(1, 1, 0, 0)
         m1 = Marker(2, 1, 0, 1)
@@ -111,6 +128,11 @@ class FlightPlanner:
         return markers
 
     def getMarker(self, index):
-        # just for testing
+        """
+        gets the marker from the array of markers
+        just for testing
+        :param index: index of array markers
+        :return: marker
+        """
         return self.markers[index]
 
