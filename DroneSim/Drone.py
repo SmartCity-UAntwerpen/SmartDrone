@@ -46,8 +46,9 @@ class Drone:
             self.black_box.warn("Drone not armed! Arm drone before takeoff.")
 
     def land(self):
+        self.black_box.info("Drone landing.")
         self.moveDistance(0,0,-self.z,velocity=0.2,deviation_sigma=0.02)
-        self.black_box.info("Drone landed at: (%.2f %.2f %.2f)" % (self.x, self.y, self.z))
+        self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 
     def forward(self, distance=None, velocity=VELOCITY):
