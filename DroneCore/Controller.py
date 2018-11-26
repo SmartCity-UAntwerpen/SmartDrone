@@ -2,6 +2,7 @@
 import errno
 import socket, time, json, sys, signal
 import CoreLogger as clogger
+import FlightPlanner as fp
 
 
 class Controller:
@@ -39,7 +40,10 @@ class Controller:
 
     def send(self,data):
         self.s.send(bytearray(data, 'utf-8'))
-        data = self.s.recv(1024) # wait for "ack" TODO: check result?
+        data = self.s.recv(1024)
+        if data == b'ACK':
+            return True     # Command executed succesfully
+        return False        # Command failed
 
     def __del__(self):
         self.s.close()
@@ -58,3 +62,22 @@ if __name__ == '__main__':
     if not controller.start_controller():
         exit(0,0)
 
+    flight_planner = fp.FlightPlanner()
+    m1 = flight_planner.getMarker(0)
+    m2 = flight_planner.getMarker(3)
+
+    plan = flight_planner.findPath(m1,m2)
+
+    print(len(plan["commands"]))
+
+    for command in plan["commands"]:
+        if not controller.send(json.dumps(command)):
+            controller.logger.warn("Drone not armed yet!")
+            arm_input = input("Type 'arm' to arm the drone: ")
+            if arm_input.lower() == "arm":
+                arm_command = {
+                    "command": "arm"
+                }
+                controller.send(json.dumps(arm_command))
+                controller.logger.info("Drone armed. Resuming flight path.")
+                controller.send(json.dumps(command))

@@ -15,25 +15,23 @@ def exit(signal, frame):
 
 
 def perform_action(command, conn):
-    """ Expecting a json message:
-        {
-            "command": ex. "move" or "turn",
-            "goal": (x,y,z),
-            "velocity": velocity,
-            "angle": angle,          # angle not always necessary, only if the command is turn
-            "height": height
-        }
-    """
     message = json.loads(command.decode())
-    if message["command"] == "move":
-        goal = message["goal"]
-        drone.moveDistance(goal[0],goal[1],goal[2],message["velocity"])
-    elif message["command"] == "arm":
-        drone.arm()
-    elif message["command"] == "takeoff":
-        drone.takeOff(message["height"], message["velocity"])
-
-    conn.send(b'ACK')
+    if drone.is_armed() or drone.is_Flying():
+        if message["command"] == "move":
+            goal = message["goal"]
+            drone.moveDistance(goal[0],goal[1],goal[2],message["velocity"])
+            conn.send(b'ACK')
+        elif message["command"] == "takeoff":
+            drone.takeOff(message["height"], message["velocity"])
+            conn.send(b'ACK')
+        else:
+            conn.send(b'WHAT?')
+    else:
+        if message["command"] == "arm":
+            drone.arm()
+            conn.send(b'ACK')
+        else:
+            conn.send(b'NOT ARMED')
 
 
 if __name__ == "__main__":

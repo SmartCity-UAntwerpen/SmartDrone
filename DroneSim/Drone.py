@@ -1,7 +1,5 @@
 
-import enum
-import math
-import time
+import enum, math, time
 import numpy as np
 import BlackBox
 
@@ -23,6 +21,7 @@ class DroneStatusEnum(enum.Enum):
     EmergencyGamepadLand=6
     EmergencyGamepadStop=7
 
+
 class Drone:
     x, y, z = 0, 0, 0
     pitch, yaw, roll = 0, 0, 0
@@ -30,6 +29,12 @@ class Drone:
     status = DroneStatusEnum.Idle       # or init? no real initialization in simulation
     id = 1
     black_box = BlackBox.create_black_box()
+
+    def is_armed(self):
+        return self.status == DroneStatusEnum.Armed
+
+    def is_Flying(self):
+        return self.status == DroneStatusEnum.Flying
 
     def arm(self):
         self.status = DroneStatusEnum.Armed
