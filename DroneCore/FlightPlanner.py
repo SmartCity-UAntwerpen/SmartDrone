@@ -10,7 +10,7 @@ def distance(m1, m2):
 
 
 class FlightPlanner:
-
+    #plans flights
     def __init__(self):
         self.maxFlightTime = 1.0
         self.markers = self.setMarkers()
