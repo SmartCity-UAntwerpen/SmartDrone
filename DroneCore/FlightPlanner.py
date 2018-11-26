@@ -10,7 +10,7 @@ def distance(m1, m2):
 
 
 class FlightPlanner:
-    #plans flights
+    # plans flights
     def __init__(self):
         self.maxFlightTime = 1.0
         self.markers = self.setMarkers()
@@ -52,20 +52,50 @@ class FlightPlanner:
         try:
             path = nx.dijkstra_path(self.G, m1, m2)
         except NetworkXNoPath:
-            # TODO replace by json and send to controller
             print("no path to node")
             path = None
 
         if path is not None:
+            fly_height = 1
+            # takeoff
+            takeoff = {
+                "command": "takeoff",
+                "velocity": 0.5,
+                "height": fly_height
+            }
+            flight_plan["commands"].append(takeoff)
+
+            # fly to target
             for index in range(0, len(path) - 1):
                 delta_x = path[index + 1].x - path[index].x
                 delta_y = path[index + 1].y - path[index].y
                 delta_z = path[index + 1].z - path[index].z
-                # TODO replace by json and send to controller
-                command = {}
+                command = {
+                    "command": "move",
+                    "goal": (delta_x, delta_y, delta_z),
+                    "velocity":0.5
+                }
                 flight_plan["commands"].append(command)
-                print("move to id= ", path[index + 1].id,)
-                print("moveDistance(", delta_x, ",", delta_y, ",", delta_z, ")")
+
+            # land
+            while fly_height > 0.05:
+                fly_height -= 0.05
+                command = {
+                    "command": "down",
+                    "height": fly_height,
+                    "velocity": 0.2
+                }
+                flight_plan["commands"].append(command)
+                command = {
+                    "command": "center"
+                }
+                flight_plan["commands"].append(command)
+
+            # get to ground and shutdown engine
+            command = {
+                "command": "land"
+            }
+            flight_plan["commands"].append(command)
 
         return flight_plan
 
@@ -84,9 +114,3 @@ class FlightPlanner:
         # just for testing
         return self.markers[index]
 
-
-if __name__ == '__main__':
-    f = FlightPlanner()
-    m1 = f.getMarker(0)
-    m2 = f.getMarker(3)
-    f.findPath(m1, m2)
