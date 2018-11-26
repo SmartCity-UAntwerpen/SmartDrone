@@ -68,7 +68,11 @@ if __name__ == '__main__':
 
     plan = flight_planner.findPath(m1,m2)
 
-    print(len(plan["commands"]))
+    initialze_command = {
+        "command": "set",
+        "goal": (m1.x, m1.y, m1.z)
+    }
+    controller.send(json.dumps(initialze_command))
 
     for command in plan["commands"]:
         if not controller.send(json.dumps(command)):

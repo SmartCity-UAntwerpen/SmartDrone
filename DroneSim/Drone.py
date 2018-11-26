@@ -3,9 +3,6 @@ import enum, math, time
 import numpy as np
 import BlackBox
 
-GAUSSIAN_MEAN = 0
-GAUSSIAN_SIGMA = 0.05 # standard deviation
-
 MAX_VELOCITY = 2
 VELOCITY = 0.5
 DEFAULT_HEIGHT = 0.4
@@ -33,7 +30,7 @@ class Drone:
     def is_armed(self):
         return self.status == DroneStatusEnum.Armed
 
-    def is_Flying(self):
+    def is_flying(self):
         return self.status == DroneStatusEnum.Flying
 
     def arm(self):
@@ -49,6 +46,8 @@ class Drone:
             self.black_box.warn("Drone not armed! Arm drone before takeoff.")
 
     def land(self):
+        self.moveDistance(0,0,-self.z,velocity=0.2,deviation_sigma=0.02)
+        self.black_box.info("Drone landed at: (%.2f %.2f %.2f)" % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 
     def forward(self, distance=None, velocity=VELOCITY):
@@ -62,7 +61,7 @@ class Drone:
 
         self.moveDistance(distance,0,0,velocity)
 
-    def back(self, distance=None, velocity=VELOCITY):
+    def backward(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
             self.black_box.warn("Specify the (positive) distance to move.")
             return
@@ -125,6 +124,9 @@ class Drone:
         self.black_box.info("Turning left by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
         self.yaw += angle_degrees * math.pi / 180
+        # move the drone, turning the drone is not perfect and moves the drone
+        self.x += np.random.normal(0, 0.2)
+        self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
     def turnRight(self, angle_degrees=None, rate=RATE):
@@ -135,24 +137,31 @@ class Drone:
         self.black_box.info("Turning right by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
         self.yaw -= angle_degrees * math.pi / 180
+        # move the drone, turning the drone is not perfect and moves the drone
+        self.x += np.random.normal(0, 0.2)
+        self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
-    def center(self):
-        pass
+    def center(self,x,y):     # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
+        # TODO: check if marker is found (fov)
+        dx = float(x - self.x)
+        dy = float(y - self.y)
+        self.black_box.info("Centering drone to x: %.2f y: %0.2f" % (x,y))
+        self.moveDistance(dx,dy,0,velocity=0.5,deviation_mean=0,deviation_sigma=0) # move to the position with 0 randomness
+        self.yaw = 0
 
-    def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5):
-        distance_x_m += np.random.normal(GAUSSIAN_MEAN,GAUSSIAN_SIGMA)
-        distance_y_m += np.random.normal(GAUSSIAN_MEAN,GAUSSIAN_SIGMA)
-        distance_z_m += np.random.normal(GAUSSIAN_MEAN,GAUSSIAN_SIGMA)
+    def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5, deviation_mean=0, deviation_sigma=0.1):
+        distance_x_m += np.random.normal(deviation_mean,deviation_sigma)
+        distance_y_m += np.random.normal(deviation_mean,deviation_sigma)
 
         distance = math.sqrt(distance_x_m * distance_x_m +
-                             distance_y_m + distance_y_m +
+                             distance_y_m * distance_y_m +
                              distance_z_m * distance_z_m)
 
         if not self.check_before_flight(distance, velocity):
             return
 
-        velocity += np.random.normal(GAUSSIAN_MEAN,GAUSSIAN_SIGMA)
+        #velocity += np.random.normal(0,0.1)
 
         flight_time = distance / velocity
 
@@ -186,3 +195,9 @@ class Drone:
             self.black_box.error("Drone has not taken off yet!")
             return False
         return True
+
+    def setCoordinates(self,x,y,z):
+        # set the coordinates of the drone, use this function only when starting
+        self.x = x
+        self.y = y
+        self.z = z

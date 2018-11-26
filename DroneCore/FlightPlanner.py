@@ -92,16 +92,17 @@ class FlightPlanner:
                 flight_plan["commands"].append(command)
 
             # land
-            while fly_height > 0.05:
-                fly_height -= 0.05
+            while fly_height >= 0.1:
+                fly_height -= 0.1
                 command = {
                     "command": "down",
-                    "height": fly_height,
+                    "distance": 0.1,
                     "velocity": 0.2
                 }
                 flight_plan["commands"].append(command)
                 command = {
-                    "command": "center"
+                    "command": "center",
+                    "id": m2.id
                 }
                 flight_plan["commands"].append(command)
 
