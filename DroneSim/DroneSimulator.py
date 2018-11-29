@@ -1,5 +1,6 @@
 
 import Drone, socket, signal, sys, json
+from DroneSim.Visualizer import Visualizer
 
 markers = [
         (1,1,0),
@@ -108,6 +109,13 @@ if __name__ == "__main__":
     s.listen(1)
 
     # initialze markers
+    l_x = 0
+    l_y = 0
+    for marker in markers:
+        l_x = marker[0] if marker[0] > l_x else l_x
+        l_y = marker[1] if marker[1] > l_y else l_y
+
+    screen = Visualizer(500,500)
 
     signal.signal(signal.SIGINT, exit)
     drone.black_box.info("Drone simulator started.")
