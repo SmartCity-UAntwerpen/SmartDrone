@@ -8,6 +8,7 @@ Folder structure:
 * numpy
 * networkx
 * matplotlib: to plot the map graph
+* pygame - for visualizing the simulator
 
 ##JSON commands
 {
