@@ -9,9 +9,6 @@ markers = [
 
 if __name__ == "__main__":
 
-    # initialze markers
-
-
     screen = Visualizer(500, 500)
     if screen.initialze_coordinate_system(markers):
         screen.draw_markers(markers)
