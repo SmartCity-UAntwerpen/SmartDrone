@@ -31,7 +31,7 @@ class Backend:
         """
         recive message from drone, message is a json message
         example
-        {"id": 1, "action": add, "location": [1,1,1]}
+        {"id": 1, "action": "add", "location": [1,1,1]}
         :param msg:
         """
         msg = msg.decode("utf-8")

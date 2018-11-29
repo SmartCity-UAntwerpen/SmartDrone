@@ -42,10 +42,8 @@ class Mqtt:
 
     def send(self,message):
         self.publish(self.topic, message)
-<<<<<<< Updated upstream
-=======
 
     def send_to_drone(self,id,message):
         topic = "smartcity/drones/" + str(id)
         self.publish(topic, message)
->>>>>>> Stashed changes
+
