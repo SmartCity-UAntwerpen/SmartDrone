@@ -1,122 +1,77 @@
 
-from Mqtt import Mqtt
-import json
+import paho.mqtt.client as paho
+import json, socket, asyncore
+import BackendLogger
 
+mqtt_broker = "broker.mqttdashboard.com"
+mqtt_port = 1883
 
-class Backend:
-    """
-    this class stores a dictionary with drone_id`s and there location
-    a new drone subscribes to the backend and is added to the dictionary
+class Backend(asyncore.dispatcher):
 
-    the backend is able to send a MQTT message to all drones (topic /drones)
-    the backend is also able to send (publish) a MQTT message (job to drone) to a specific drone (topic /drone/id)
-    all the drones send (on a regular base) a message with there new location
+    logger = BackendLogger.logger
+    mqtt = None
 
-    the backend can also call Flightplanner to convert a job into instructions
-    """
+    def __init__(self,ip,port,base_mqtt_topic):
+        # Start tcp socket, drones connect to this socket to add themselves to the network
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.set_reuse_addr()
+        self.bind((ip,port))
+        self.listen(3)      # Allow 3 drones to be connected to the backend with tcp at the same time
 
-    def __init__(self):
-        self.mqtt_backend = Mqtt("broker.mqttdashboard.com",1883,"smartcity/drone/backend")
-        self.dictionary = {}
+        # Setup MQTT here
+        self.base_mqtt_topic = base_mqtt_topic
+        self.mqtt = paho.Client()
+        self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
+        self.mqtt.connect(mqtt_broker, mqtt_port, 60)
+        self.mqtt.subscribe(base_mqtt_topic + "/#")
+        self.mqtt.loop_start()
 
-        self.mqtt = Mqtt("broker.mqttdashboard.com", 1883, "smartcity/drones")
-        self.start_listener_backend()
-        self.mqtt.send("backend online")
+        self.drones = {}
+        self.logger.info("Backend started.")
 
-    def start_listener_backend(self):
-        self.mqtt.connect()
-        self.mqtt.add_listener_func(self.on_mqtt_message_backend)
+    def handle_accept(self):
+        pair = self.accept()
+        if pair is None:
+            return
+        sock, addr = pair
+        new_drone_id = len(self.drones.keys())
+        reply = {
+            "id": new_drone_id,
+            "mqtt_topic": self.base_mqtt_topic,
+            "mqtt_broker": mqtt_broker,
+            "mqtt_port": mqtt_port
+        }
+        sock.send(json.dumps(reply).encode())
+        self.drones[new_drone_id] = (0,0,0)
+        self.logger.info("New drone connected: [id] %d, [ip_addr] %s" % (new_drone_id, str(addr)))
 
-    def on_mqtt_message_backend(self,msg):
-        """
-        recive message from drone, message is a json message
-        example
-        {"id": 1, "action": "add", "location": [1,1,1]}
-        :param msg:
-        """
-        msg = msg.decode("utf-8")
-        in_message = json.loads(msg)
-        id = in_message['id']
-        location = in_message['location']
-        action = in_message['action']
+    def mqtt_callback(self, mosq, obj, msg):
+        data = json.loads(msg.payload.decode())
 
-        if action == "add":
-            self.add_drone(id, location)
-        elif action == "remove":
-            self.remove_drone(id)
-        elif action == "update":
-            self.set_location(id,location)
-        else:
-            message = {
-                "id": id,
-                "action": "undefined"
-            }
-            self.mqtt.send_to_drone(id,json.dumps(message))
-
-    def print_dictionary(self):
-        print(self.dictionary.items())
-
-    def add_drone(self, id, location):
-        """
-        check if id exist, if not add to dictionary and send ack message to drone
-        else send nack
-        :param id: id from drone
-        :param location: location from drone
-        """
-        if id not in self.dictionary:
-            self.dictionary[id] = location
-            message = {
-                "id": id,
-                "action": "ack"
-            }
-            self.mqtt.send_to_drone(id, json.dumps(message))
-        else:
-            message = {
-                "id": id,
-                "action": "nack"
-            }
-            self.mqtt.send_to_drone(id, json.dumps(message))
-
-    def remove_drone(self, id):
-        """
-        check if id exist, if remove from dictionary and send ack message to drone
-        else send nack
-        :param id:
-        """
-        if id in self.dictionary:
-            del self.dictionary[id]
-            message = {
-                "id": id,
-                "action": "ack"
-            }
-            self.mqtt.send_to_drone(id, json.dumps(message))
-        else:
-            message = {
-                "id": id,
-                "action": "nack"
-            }
-            self.mqtt.send_to_drone(id, json.dumps(message))
+        if data["action"] == "position_update":
+            self.drones[int(data["id"])] = data["position"]
+            self.logger.info("Position update. Drone id: %d, new position: (%.2f %.2f %.2f)"
+                             % (data["id"],data["position"][0],data["position"][1],data["position"][2]))
 
     def find_location(self, id):
-        return self.dictionary[id]
+        return self.drones[id]
 
     def set_location(self,id,location):
-        if id in self.dictionary:
-            self.dictionary[id] = location
+        if id in self.drones.keys():
+            self.drones[id] = location
+
+    def __del__(self):
+        self.mqtt.disconnect()
+        self.mqtt.loop_stop()
+        self.close()
 
 
 if __name__ == "__main__":
-    b = Backend()
-    b.add_drone(1, (1, 1, 1))
-    print(b.find_location(1))
-    b.set_location(1,(2,2,2,))
-    print(b.find_location(1))
-
-    #TODO replace this
-    while True:
-        pass
+    backend = Backend("0.0.0.0", 5001,"smartcity/drones")
+    asyncore.loop()
 
 
-    #TODO add nodes from database
-    #TODO make use of flightplanner
-    #TODO accept a job from the maas
+    #TODO: add nodes from database
+    #TODO: make use of flightplanner
+    #TODO: accept a job from the maas

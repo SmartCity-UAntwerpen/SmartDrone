@@ -1,5 +1,6 @@
+
 class Marker:
-    # TODO make serelizable
+
     def __init__(self, x, y, z, id):
         self.x = x
         self.y = y

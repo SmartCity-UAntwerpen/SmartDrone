@@ -1,6 +1,5 @@
 
 import Drone, socket, signal, sys, json
-from DroneSim.Visualizer import Visualizer
 
 markers = [
         (1,1,0),
@@ -22,85 +21,92 @@ def exit(signal, frame):
     sys.exit(0)
 
 
+def send_drone_position(connection):
+    res = {
+        "position": (float(drone.x), float(drone.y), float(drone.z)),
+    }
+    connection.send(json.dumps(res).encode())
+
+
 def perform_action(command, conn):
     message = json.loads(command.decode())
     if drone.is_armed():
         if message["command"] == "takeoff":
             drone.takeOff(message["height"], message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
     if drone.is_flying():
         if message["command"] == "land":
             drone.land()
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "move":
             goal = message["goal"]
             drone.moveDistance(goal[0],goal[1],goal[2],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "forward":
             drone.forward(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "backward":
             drone.backward(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "left":
             drone.left(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "right":
             drone.right(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "up":
             drone.up(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "down":
             drone.down(message["distance"],message["velocity"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "turn_left":
             drone.turnLeft(message["angle"],message["rate"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "turn_right":
             drone.turnRight(message["angle"],message["rate"])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
         elif message["command"] == "center":
             marker = markers[message["id"]]
             drone.center(marker[0],marker[1])
-            conn.send(b'ACK')
+            send_drone_position(conn)
             return
 
     # commands that can be berformed when not flying or armed
     if message["command"] == "arm":
         drone.arm()
-        conn.send(b'ACK')
+        send_drone_position(conn)
         return
 
     elif message["command"] == "set":
         goal = message["goal"]
         drone.setCoordinates(goal[0], goal[1], goal[2])
-        conn.send(b'ACK')
+        send_drone_position(conn)
         return
 
-    conn.send(b'NOT ARMED')
+    conn.send(b'NOT_ARMED')
     return
 
 
@@ -109,13 +115,6 @@ if __name__ == "__main__":
     s.listen(1)
 
     # initialze markers
-    l_x = 0
-    l_y = 0
-    for marker in markers:
-        l_x = marker[0] if marker[0] > l_x else l_x
-        l_y = marker[1] if marker[1] > l_y else l_y
-
-    screen = Visualizer(500,500)
 
     signal.signal(signal.SIGINT, exit)
     drone.black_box.info("Drone simulator started.")
