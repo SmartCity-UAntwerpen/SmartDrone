@@ -20,10 +20,10 @@ class Mqtt:
 
     def on_connect(self, client, userdata, flags, rc):
         client.subscribe(self.topic)
-        print("Geconnecteerd met " + self.host)
+        print("Connected with " + self.host)
 
     def on_message(self, client, userdata, msg):
-        self.notify_listeners(str(msg.payload))
+        self.notify_listeners(msg.payload)
 
     def publish(self, topic, message, callback=None):
         if callback != None:
@@ -42,3 +42,10 @@ class Mqtt:
 
     def send(self,message):
         self.publish(self.topic, message)
+<<<<<<< Updated upstream
+=======
+
+    def send_to_drone(self,id,message):
+        topic = "smartcity/drones/" + str(id)
+        self.publish(topic, message)
+>>>>>>> Stashed changes
