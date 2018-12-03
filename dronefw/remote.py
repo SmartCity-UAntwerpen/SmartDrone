@@ -22,6 +22,7 @@ while (True):
         #Flight commands
         if (Drone.DroneStatus != DroneStatusEnum.Flying):
             if (Drone.Gamepad.Start==1):
+                print ("Arm")
                 Drone.Arm()
                 Drone.mc.TakeOff(0.3, 0.4)
         if (Drone.DroneStatus == DroneStatusEnum.Flying):
@@ -44,7 +45,8 @@ while (True):
             if (Drone.Gamepad.R1==1):
                 Drone.ArucoNav.Center()
             if (Drone.Gamepad.R2==1):
-                Drone.mc.MoveDistance(1.0, 0, 0, 0.5)
+                #Drone.mc.MoveDistance(1.0, 0, 0, 0.5)
+                Drone.ArucoNav.GuidedLand()
             if (Drone.Gamepad.L2==1):
                 # Main autonomous sequence
 

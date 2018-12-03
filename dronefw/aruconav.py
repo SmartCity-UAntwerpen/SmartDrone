@@ -15,6 +15,7 @@ class MarkerVectorClass:
     Y=0
     Rot=0
 
+
 class ArucoNavClass:
     """
     Aruco navigation class. Enables detection and automatic flight relative to a detected aruco marker
@@ -31,8 +32,9 @@ class ArucoNavClass:
         self._Drone=Drone
         self._Detector=Detector
         self.RotRate=20
+        self._DebugPrint = False
 
-    def Detect(self,MarkerId=-1):
+    def Detect(self,MarkerId=-1,PipelineFlush=True,NumTries=40,CalcYaw=True):
         """
         Try to detect aruco markers under the drone
 
@@ -44,13 +46,11 @@ class ArucoNavClass:
         """
         self.MarkerVector=MarkerVectorClass
 
-        print('Scan')
-        for a in range(0, 15):
+        if (PipelineFlush==True):
+            for a in range(0, 15):
+                num = self._Detector.Detect()
+        for a in range(0, NumTries):
             num = self._Detector.Detect()
-            print('Num:%s' % (num))
-        for a in range(0, 40):
-            num = self._Detector.Detect()
-            print('Num:%s' % (num))
             if (num > 0):
                 break;
 
@@ -58,11 +58,14 @@ class ArucoNavClass:
             self.MarkerVector.Id=self._Detector.MarkerList[0].MarkerId
             self.MarkerVector.Y = -self._Detector.MarkerList[0].TVecX
             self.MarkerVector.X = -self._Detector.MarkerList[0].TVecY
-            self.MarkerVector.Rot=self._Detector.GetMarkerYaw(0)
-            print ('Marker:(%s,%s,%s)' % (self.MarkerVector.X,self.MarkerVector.Y,self.MarkerVector.Rot))
+            if (CalcYaw==True):
+                self.MarkerVector.Rot=self._Detector.GetMarkerYaw(0)
+            if (self._DebugPrint == True):
+                print ('Marker:(%s,%s,%s)' % (self.MarkerVector.X,self.MarkerVector.Y,self.MarkerVector.Rot))
             return self.MarkerVector
         else:
-            print("None detected")
+            if (self._DebugPrint == True):
+                print("None detected")
             return None
 
     def Center(self,MarkerId=-1,Velocity=0.5):
@@ -72,6 +75,9 @@ class ArucoNavClass:
 
         :param MarkerId: -1 if any marker ID should be detected, otherwise an ID value (NOT IMPLEMENTED)
         :param Velocity: Speed (m/s) of the drone while centering
+        :returns:
+        None if no valid marker has been detected. Otherwise returns an instance of MarkerVectorClass
+        containing the relative vector to the detected marker before the centering operation.
         """
         MarkerVector=self.Detect(MarkerId)
 
@@ -81,4 +87,48 @@ class ArucoNavClass:
                 self._Drone.mc.TurnRight(MarkerVector.Rot, self.RotRate)
             else:
                 self._Drone.mc.TurnLeft(-MarkerVector.Rot, self.RotRate)
+        return MarkerVector
 
+    def GuidedLand(self,XYVelocitySlow=0.05,XYVelocityFast=0.4,ZVelocitySlow=0.1,ZVelocityFast=0.4,MinGuidedHeight=0.3):
+        """
+        Try to land on an aruco marker in the viewport of the drone. If no marker is detected, an unguided landing is performed.
+        If a marker is detected, the drone will first perform a centering operation on the marker and then perform a slow descent
+        while tracking the marker. When descending under a specified height, the rest of the descent is performed unguided.
+        Currently guidance velocity is limited by the latency of the Aruco detector.
+
+        :param XYVelocitySlow: XY speed (m/s) while performing guided operations
+        :param XYVelocityFast: XY speed (m/s) while performing unguided operations
+        :param ZVelocitySlow: Z speed (m/s) while performing guided operations
+        :param ZVelocityFast: Z speed (m/s) while performing unguided operations
+        :param MinGuidedHeight: underneath this height the rest of the descent will be performed unguided
+        :param Velocity: Speed (m/s) of the drone while centerin
+        :returns:
+        None if no valid marker has been detected. Otherwise returns an instance of MarkerVectorClass
+        containing the relative vector to the detected marker before the centering operation.
+        """
+
+
+        #First center command, flush camera pipeline
+        MarkerVector=self.Center(-1,XYVelocityFast)
+        self.Center(-1,XYVelocityFast)
+
+        if (MarkerVector is None):
+            #No marker detected --> perform normal unguided fast land
+            self._Drone.mc.land(ZVelocityFast)
+            return MarkerVector
+
+        #Continuous descent
+        while (self._Drone.pz>MinGuidedHeight):
+            if (self._DebugPrint == True):
+                print ("pz:%s" %(self._Drone.pz))
+            MarkerVector = self.Detect(PipelineFlush=False,NumTries=1,CalcYaw=False)
+            if (MarkerVector is not None):
+                vl=math.sqrt (MarkerVector.X**2 + MarkerVector.Y**2)
+                vx=MarkerVector.X/vl*XYVelocitySlow
+                vy=MarkerVector.Y/vl*XYVelocitySlow
+                self._Drone.mc.start_linear_motion(vx, vy, -ZVelocitySlow)
+            else:
+                self._Drone.mc.start_linear_motion(0, 0, -ZVelocitySlow)
+        print ("Fast land!")
+        self._Drone.mc.land(ZVelocityFast)
+        return MarkerVector

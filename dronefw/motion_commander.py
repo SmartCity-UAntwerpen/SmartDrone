@@ -588,12 +588,20 @@ class MotionCommander:
         :return:
         """
         #Clip velocity
-        if (velocity_x_m>settings.MaxXYVel):
+        if (velocity_x_m>0 and velocity_x_m>settings.MaxXYVel):
             velocity_x_m=settings.MaxXYVel
-        if (velocity_y_m>settings.MaxXYVel):
+        if (velocity_x_m<0 and (-velocity_x_m)>settings.MaxXYVel):
+            velocity_x_m=-settings.MaxXYVel
+
+        if (velocity_y_m>0 and velocity_y_m>settings.MaxXYVel):
             velocity_y_m=settings.MaxXYVel
-        if (velocity_z_m>settings.MaxZVel):
+        if (velocity_y_m<0 and (-velocity_y_m)>settings.MaxXYVel):
+            velocity_y_m=-settings.MaxXYVel
+
+        if (velocity_z_m>0 and velocity_z_m>settings.MaxZVel):
             velocity_z_m=settings.MaxZVel
+        if (velocity_z_m<0 and (-velocity_z_m)>settings.MaxZVel):
+            velocity_z_m=-settings.MaxZVel
 
         if (self.DoNotInterrupt==1 and priority==0):
             raise Exception ("Cannot execute motion; DoNotInterrupt override active.")
