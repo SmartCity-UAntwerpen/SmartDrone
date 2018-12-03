@@ -96,7 +96,7 @@ class Controller:
             "action": "position_update",
             "position": position
         }
-        self.mqtt.publish(self.backend_topic, json.dumps(data),qos=2)
+        self.mqtt.publish(self.backend_topic, json.dumps(data), qos=2)
 
     def __del__(self):
         self.mqtt.disconnect()
