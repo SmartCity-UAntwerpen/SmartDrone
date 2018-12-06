@@ -2,7 +2,9 @@
 import paho.mqtt.client as paho
 import json, socket, asyncore
 import BackendLogger
+from json import JSONDecodeError
 
+base_topic = "smartcity/drones"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 
@@ -28,23 +30,30 @@ class Backend(asyncore.dispatcher):
         self.mqtt.loop_start()
 
         self.drones = {}
+        self.ids = {}
         self.logger.info("Backend started.")
 
     def handle_accept(self):
         pair = self.accept()
-        if pair is None:
-            return
+        if pair is None: return
         sock, addr = pair
-        new_drone_id = len(self.drones.keys())
-        reply = {
-            "id": new_drone_id,
-            "mqtt_topic": self.base_mqtt_topic,
-            "mqtt_broker": mqtt_broker,
-            "mqtt_port": mqtt_port
-        }
-        sock.send(json.dumps(reply).encode())
-        self.drones[new_drone_id] = (0,0,0)
-        self.logger.info("New drone connected: [id] %d, [ip_addr] %s" % (new_drone_id, str(addr)))
+
+        data = sock.recv(2048).decode()
+        try:
+            data = json.loads(data)
+            new_drone_id = self.ids[data["unique"]] if data["unique"] in self.ids.keys() else len(self.ids)
+            reply = {
+                "id": new_drone_id,
+                "mqtt_topic": self.base_mqtt_topic,
+                "mqtt_broker": mqtt_broker,
+                "mqtt_port": mqtt_port
+            }
+            sock.send(json.dumps(reply).encode())
+            self.ids[data["unique"]] = new_drone_id
+            self.drones[new_drone_id] = (0, 0, 0)
+            self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, str(addr)))
+        except JSONDecodeError:
+            self.logger.error("Recieved message (TCP) not json decodable.")
 
     def mqtt_callback(self, mosq, obj, msg):
         data = json.loads(msg.payload.decode())
@@ -68,7 +77,7 @@ class Backend(asyncore.dispatcher):
 
 
 if __name__ == "__main__":
-    backend = Backend("0.0.0.0", 5001,"smartcity/drones")
+    backend = Backend("0.0.0.0", 5001, base_topic)
     asyncore.loop()
 
 
