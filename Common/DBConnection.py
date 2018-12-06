@@ -47,6 +47,7 @@ class DBConnection:
         query = "insert into drone(droneid, x,y,z) values(" + str(id) + "," + str(x) + "," + str(y) + "," + str(z) + ")"
         cursor.execute(query)
 
+
 if __name__ == "__main__":
 
     db = DBConnection()
