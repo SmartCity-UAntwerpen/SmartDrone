@@ -9,6 +9,7 @@ Folder structure:
 * networkx
 * matplotlib: to plot the map graph
 * pygame - for visualizing the simulator
+* mysql.connector - for connection with database
 
 ##JSON commands
 {

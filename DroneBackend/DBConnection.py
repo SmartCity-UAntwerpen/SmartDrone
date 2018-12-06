@@ -23,7 +23,7 @@ class DBConnection:
             cursor = self.db.cursor()
             parentDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = parentDir+"\\init_DB.sql"
-            # TODO search for way to run sql sript at once command SOURCE does not work.
+            # TODO search for way to run sql script at once command SOURCE does not work.
             for line in open(path, 'r').readlines():
                 cursor.execute(line)
 
@@ -44,6 +44,7 @@ class DBConnection:
         z = location[2]
         query = "insert into drone(droneid, x,y,z) values(" + str(id) + "," + str(x) + "," + str(y) + "," + str(z) + ")"
         cursor.execute(query)
+
 
 if __name__ == "__main__":
 
