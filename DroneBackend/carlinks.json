@@ -1,0 +1,342 @@
+[
+  {
+    "id": 953,
+    "startPoint": {
+      "id": 43,
+      "x": 33,
+      "y": 37,
+      "type": "drone"
+    },
+    "stopPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+    "id": 999,
+    "startPoint": {
+      "id": 11,
+      "x": 30,
+      "y": 35,
+      "type": "robot"
+    },
+    "stopPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+  "id": 957,
+  "startPoint": {
+    "id": 44,
+    "x": 93,
+    "y": 67,
+    "type": "drone"
+  },
+  "stopPoint": {
+    "id": 46,
+    "x": 93,
+    "y": 63,
+    "type": "car"
+  },
+  "vehicle": "wait",
+  "weight": 1
+},
+{
+    "id": 1010,
+    "startPoint": {
+      "id": 20,
+      "x": 30,
+      "y": 5,
+      "type": "robot"
+    },
+    "stopPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+    "id": 1027,
+    "startPoint": {
+      "id": 29,
+      "x": 125,
+      "y": 45,
+      "type": "robot"
+    },
+    "stopPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+    {
+    "id": 1034,
+    "startPoint": {
+      "id": 32,
+      "x": 95,
+      "y": 65,
+      "type": "robot"
+    },
+    "stopPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+    {
+    "id": 962,
+    "startPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 963,
+    "startPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 964,
+    "startPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 44,
+      "x": 93,
+      "y": 67,
+      "type": "drone"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+    {
+    "id": 965,
+    "startPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 32,
+      "x": 95,
+      "y": 65,
+      "type": "robot"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+    {
+    "id": 966,
+    "startPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 967,
+    "startPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 968,
+    "startPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 43,
+      "x": 33,
+      "y": 37,
+      "type": "drone"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+    "id": 969,
+    "startPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 11,
+      "x": 30,
+      "y": 35,
+      "type": "robot"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+    "id": 970,
+    "startPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 47,
+      "x": 33,
+      "y": 42,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 971,
+    "startPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+    {
+    "id": 972,
+    "startPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 20,
+      "x": 30,
+      "y": 5,
+      "type": "robot"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  },
+  {
+    "id": 973,
+    "startPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 46,
+      "x": 93,
+      "y": 63,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+  {
+    "id": 974,
+    "startPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 48,
+      "x": 28,
+      "y": 3,
+      "type": "car"
+    },
+    "vehicle": "carTop",
+    "weight": 1
+  },
+  {
+    "id": 975,
+    "startPoint": {
+      "id": 49,
+      "x": 127,
+      "y": 43,
+      "type": "car"
+    },
+    "stopPoint": {
+      "id": 29,
+      "x": 125,
+      "y": 45,
+      "type": "robot"
+    },
+    "vehicle": "wait",
+    "weight": 1
+  }
+]
