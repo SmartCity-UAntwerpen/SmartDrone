@@ -9,6 +9,7 @@ Folder structure:
 * networkx
 * matplotlib: to plot the map graph
 * pygame - for visualizing the simulator
+* flask - REST
 
 ##JSON commands
 {
@@ -19,3 +20,10 @@ Folder structure:
             "height": height
 }
 
+Job:\
+{ \
+    "action": job,\ 
+    "point1": marker_id,\
+    "point2": marker_id,\
+    //"priority": priority\
+    }

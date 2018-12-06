@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from networkx import NetworkXNoPath
 from Marker import Marker
 
-from DroneBackend.DBConnection import DBConnection
+from Common.DBConnection import DBConnection
 
 
 def distance(m1, m2):

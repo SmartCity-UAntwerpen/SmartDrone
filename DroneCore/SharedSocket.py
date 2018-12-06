@@ -18,3 +18,6 @@ class SharedSocket(threading.Thread):
         data = self.s.recv(2048)
         self.lock.release()
         return data
+
+    def close(self):
+        self.s.close()

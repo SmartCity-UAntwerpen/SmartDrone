@@ -25,6 +25,7 @@ class DBConnection:
             parentDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = parentDir+"\\init_DB.sql"
             # TODO search for way to run sql sript at once command SOURCE does not work.
+            # TODO: change path directory
             for line in open(path, 'r').readlines():
                 cursor.execute(line)
 

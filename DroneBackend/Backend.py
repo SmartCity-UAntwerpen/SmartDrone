@@ -3,10 +3,27 @@ import paho.mqtt.client as paho
 import json, socket, asyncore
 import BackendLogger
 from json import JSONDecodeError
+from flask import Flask
+import sys, multiprocessing, signal
 
 base_topic = "smartcity/drones"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
+
+app = Flask("DroneBackend")
+
+
+class RestApi():
+
+    api = multiprocessing.Process(target=app.run, args=("0.0.0.0",8082))
+
+    def start(self):
+        self.api.start()
+
+    def join(self):
+        self.api.terminate()
+        self.api.join()
+
 
 class Backend(asyncore.dispatcher):
 
@@ -51,17 +68,28 @@ class Backend(asyncore.dispatcher):
             sock.send(json.dumps(reply).encode())
             self.ids[data["unique"]] = new_drone_id
             self.drones[new_drone_id] = (0, 0, 0)
-            self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, str(addr)))
+            self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, data["unique"]))
         except JSONDecodeError:
-            self.logger.error("Recieved message (TCP) not json decodable.")
+            self.logger.error("Received message (TCP) not json decodable.")
 
     def mqtt_callback(self, mosq, obj, msg):
         data = json.loads(msg.payload.decode())
 
-        if data["action"] == "position_update":
-            self.drones[int(data["id"])] = data["position"]
-            self.logger.info("Position update. Drone id: %d, new position: (%.2f %.2f %.2f)"
-                             % (data["id"],data["position"][0],data["position"][1],data["position"][2]))
+        if data["action"] is None or data["id"] is None:
+            self.logger.warn("Received uncomplete JSON message (no id or action field).")
+            return
+
+        if int(data["id"]) not in self.ids.values():
+            self.logger.warn("Received message from unkown drone with id: %d" % int(data["id"]))
+            return
+
+        try:
+            if data["action"] == "position_update":
+                self.drones[int(data["id"])] = data["position"]
+                self.logger.info("Position update. Drone id: %d, new position: (%.2f %.2f %.2f)"
+                                 % (data["id"],data["position"][0],data["position"][1],data["position"][2]))
+        except KeyError:
+            self.logger.warn("Received message with action: %s, not enough data provided to perform action." % data["action"])
 
     def find_location(self, id):
         return self.drones[id]
@@ -76,8 +104,26 @@ class Backend(asyncore.dispatcher):
         self.close()
 
 
+def exit(signal, frame):
+    print("Terminating Backend...")
+    global api
+    api.join()
+    global backend
+    del backend
+    sys.exit(0)
+
+
+@app.route('/link')
+def link_api():
+    data = json.loads(open('carlinks.json').read())
+    return json.dumps(data)
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, exit)
     backend = Backend("0.0.0.0", 5001, base_topic)
+    api = RestApi()
+    api.start()
     asyncore.loop()
 
 

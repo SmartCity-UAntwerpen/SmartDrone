@@ -33,9 +33,16 @@ class Drone:
     def is_flying(self):
         return self.status == DroneStatusEnum.Flying
 
+    def is_idle(self):
+        return self.status == DroneStatusEnum.Idle
+
     def arm(self):
         self.status = DroneStatusEnum.Armed
         self.black_box.info("Drone armed.")
+
+    def disarm(self):
+        self.status = DroneStatusEnum.Idle
+        self.black_box.info("Drone disarmed.")
 
     def takeOff(self, height=DEFAULT_HEIGHT, velocity=VELOCITY):
         if self.status == DroneStatusEnum.Armed:
@@ -48,6 +55,12 @@ class Drone:
     def land(self):
         self.black_box.info("Drone landing.")
         self.moveDistance(0,0,-self.z,velocity=0.2,deviation_sigma=0.02)
+        self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
+        self.status = DroneStatusEnum.Idle
+
+    def guided_land(self,velocity):
+        self.black_box.info("Drone landing (guided).")
+        self.moveDistance(0, 0, -self.z, velocity=velocity, deviation_sigma=0)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 

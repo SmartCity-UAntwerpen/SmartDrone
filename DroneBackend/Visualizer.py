@@ -113,7 +113,7 @@ class Visualizer:
 
 
 if __name__ == "__main__":
-    from DroneCore.Marker import Marker
+    from Common.Marker import Marker
 
     m0 = Marker(1, 1, 0, 0)
     m1 = Marker(2, 1, 0, 1)

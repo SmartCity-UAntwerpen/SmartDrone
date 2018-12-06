@@ -8,6 +8,7 @@ import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
 import SharedSocket
+from Exceptions import DroneNotArmedException, CommandNotExectuedException
 
 
 class Poller(threading.Thread):
@@ -29,8 +30,10 @@ class Poller(threading.Thread):
         super().join(timeout)
 
 
-class Controller:
+class Controller(threading.Thread):
 
+    running = True
+    executing_flight_plan = False
     s_backend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s_execution = SharedSocket.SharedSocket()
     logger = clogger.logger
@@ -40,7 +43,12 @@ class Controller:
     backend_topic = None
     socket_lock = threading.Lock()
 
+    current_marker_id = 0
+    flight_planner = fp.FlightPlanner()
+    jobs = [] # job list
+
     def __init__(self,ip,port):
+        super().__init__()
         self.ip = ip
         self.port = port
 
@@ -102,23 +110,41 @@ class Controller:
 
         self.poller = Poller(self)
         self.poller.start()
+
+        initialze_command = {
+            "action": "execute_command",
+            "command": "set_position_marker",
+            "id": self.current_marker_id
+        }
+        try: controller.send_command(json.dumps(initialze_command))
+        except CommandNotExectuedException: self.logger.warn("Position not initialized correct, initialze command failed.")
         return True # controller successfully started
 
     def send_command(self, data):
         data = self.s_execution.send_and_receive(data.encode())
 
         if data == b'NOT_ARMED':
-            return False               # Command failed
-
-        return True     # Command executed successfully
+            raise DroneNotArmedException()              # Command failed
+        if data == b'ERROR':
+            raise CommandNotExectuedException()         # Command failed
+        # Command executed successfully
 
     def public_mqtt_callback(self, mosq, obj, msg):
         # possibility to recieve commands from the backend sent to all drones
         pass
 
     def unique_mqtt_callback(self, mosq, obj, msg):
-        # jobs will come in here
-        pass
+        try:
+            data = json.loads(msg.payload.decode())
+            if data["action"] is None:
+                self.logger.warn("Received new mqtt message on unique topic, message does not contain an action.")
+
+            if data["action"] == "no_plan_job":
+                # add job to the queue
+                self.jobs.append(data)
+
+        except JSONDecodeError:
+            self.logger.warn("Received new mqtt message on unique topic, message is not in JSON format.")
 
     def send_position_update(self):
         message = { "action": "send_position" }
@@ -147,17 +173,68 @@ class Controller:
         except JSONDecodeError:
             self.logger.error("Position result was not in the correct format (no JSON).")
 
+    def execute_flight_plan(self,plan):
+        while len(plan["commands"]) != 0 and self.executing_flight_plan:
+            command = plan["commands"].pop(0)
+            command["action"] = "execute_command"
+            try: self.send_command(json.dumps(command))
+            except DroneNotArmedException:
+                controller.logger.warn("Drone not armed yet!")
+                arm_input = input("Type 'arm' to arm the drone: ")
+                if arm_input.lower() == "arm":
+                    arm_command = {
+                        "action": "execute_command",
+                        "command": "arm"
+                    }
+                    try: self.send_command(json.dumps(arm_command))
+                    except CommandNotExectuedException: self.logger.error("Arm command not executed!")
+            self.logger.info("Drone armed. Resuming flight path.")
+            try: self.send_command(json.dumps(command))
+            except DroneNotArmedException: self.logger.error("Command not executed!")
+
+    def execute_job(self,job):
+        if job["action"] == "no_plan_job":
+            # no plan attached to the job, so create one here
+            if self.current_marker_id != job["point1"]:
+                # first go to point1
+                plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
+                self.executing_flight_plan = True
+                self.execute_flight_plan(plan)
+                self.executing_flight_plan = False
+            plan = self.flight_planner.find_path(job["point1"],job["point2"])
+            self.executing_flight_plan = True
+            self.execute_flight_plan(plan)
+            self.executing_flight_plan = False
+
+    def run(self):
+        try:
+            # Polling loop, sleep 1 s each time
+            while controller.running:
+                if len(self.jobs) is not 0:
+                    # get the first job
+                    job = self.jobs.pop(0)
+                time.sleep(0.01)
+        except Exception:
+            exit(0, 0)
+
+    def join(self, timeout=0):
+        self.running = False
+
     def __del__(self):
+        self.send_position_update()
+        self.send_status_update()
         self.mqtt.disconnect()
         self.mqtt.loop_stop()
         self.s_backend.close()
         self.s_execution.close()
+        self.s_execution.join()
         self.poller.join()
 
 
 def exit(signal, frame):
     print("Controller closed.")
     global controller
+    controller.join()
     del controller
     sys.exit(0)
 
@@ -168,29 +245,5 @@ if __name__ == '__main__':
     if not controller.start_controller():
         exit(0,0)
 
-    flight_planner = fp.FlightPlanner()
-    m1 = flight_planner.getMarker(0)
-    m2 = flight_planner.getMarker(3)
-
-    plan = flight_planner.findPath(m1,m2)
-
-    initialze_command = {
-        "action": "execute_command",
-        "command": "set",
-        "goal": (m1.x, m1.y, m1.z)
-    }
-    controller.send_command(json.dumps(initialze_command))
-
-    for command in plan["commands"]:
-        command["action"] = "execute_command"
-        if not controller.send_command(json.dumps(command)):
-            controller.logger.warn("Drone not armed yet!")
-            arm_input = input("Type 'arm' to arm the drone: ")
-            if arm_input.lower() == "arm":
-                arm_command = {
-                    "action": "execute_command",
-                    "command": "arm"
-                }
-                controller.send_command(json.dumps(arm_command))
-                controller.logger.info("Drone armed. Resuming flight path.")
-                controller.send_command(json.dumps(command))
+    controller.current_marker_id = int(sys.argv[2])
+    controller.start()
