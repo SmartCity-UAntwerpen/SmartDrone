@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from networkx import NetworkXNoPath
 from Marker import Marker
 
+from DroneBackend.DBConnection import DBConnection
+
 
 def distance(m1, m2):
     return math.sqrt(pow(m2.x - m1.x, 2) + pow(m2.y - m1.y, 2) + pow(m2.z - m2.z, 2))
@@ -16,9 +18,11 @@ class FlightPlanner:
         sets the markers
         makes a graph
         """
+        self.db = DBConnection()
         self.maxFlightTime = 1.0
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
+
 
     def makeGraph(self, verbose=False):
         """
@@ -49,7 +53,7 @@ class FlightPlanner:
 
         return G
 
-    def findPath(self, m1, m2):
+    def findPath(self, id_marker1, id_marker2):
         """
         use dijkstra to find the path between marker m1 and m2
         if no path exist return an empty message
@@ -58,7 +62,8 @@ class FlightPlanner:
         :param m2: marker 2 the endpoint
         :return: json with instructions
         """
-
+        m1 = self.getMarker(id_marker1)
+        m2 = self.getMarker(id_marker2)
         flight_plan = {
             "commands": [],
         }
@@ -87,7 +92,7 @@ class FlightPlanner:
                 command = {
                     "command": "move",
                     "goal": (delta_x, delta_y, delta_z),
-                    "velocity":0.5
+                    "velocity": 0.5
                 }
                 flight_plan["commands"].append(command)
 
@@ -119,13 +124,12 @@ class FlightPlanner:
         get the markers from the database and store them in an array
         :return: array with markers
         """
-        # TODO read markers from database
-        m0 = Marker(1, 1, 0, 0)
-        m1 = Marker(2, 1, 0, 1)
-        m2 = Marker(1, 2, 0, 2)
-        m3 = Marker(2, 2, 0, 3)
-        m4 = Marker(1, 3, 0, 4)
-        markers = [m0, m1, m2, m3, m4]
+
+        # x,y,z,transitpoint
+        markers = []
+        for m in self.db.query("select * from point"):
+            markers.append(Marker(m[1], m[2], m[3],m[0]))
+
         return markers
 
     def getMarker(self, index):
@@ -135,5 +139,11 @@ class FlightPlanner:
         :param index: index of array markers
         :return: marker
         """
+
         return self.markers[index]
 
+
+if __name__ == "__main__":
+    f = FlightPlanner()
+    flightplan = f.findPath(1,2)
+    print(flightplan)

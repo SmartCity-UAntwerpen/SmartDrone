@@ -8,7 +8,7 @@ class Marker:
         self.id = id
 
     def print(self):
-        print("marker id= ", id, "[", self.x, ",", self.y, ",", self.z, "]")
+        print("marker id= ", self.id, "[", self.x, ",", self.y, ",", self.z, "]")
 
     def __str__(self):
         return str(self.id)

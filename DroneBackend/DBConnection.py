@@ -1,5 +1,5 @@
 import mysql.connector
-
+import os
 
 class DBConnection:
 
@@ -21,8 +21,10 @@ class DBConnection:
                 passwd="student",
             )
             cursor = self.db.cursor()
+            parentDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            path = parentDir+"\\init_DB.sql"
             # TODO search for way to run sql sript at once command SOURCE does not work.
-            for line in open('init_DB.sql', 'r').readlines():
+            for line in open(path, 'r').readlines():
                 cursor.execute(line)
 
     def query(self, message):
@@ -43,16 +45,9 @@ class DBConnection:
         query = "insert into drone(droneid, x,y,z) values(" + str(id) + "," + str(x) + "," + str(y) + "," + str(z) + ")"
         cursor.execute(query)
 
-
 if __name__ == "__main__":
 
     db = DBConnection()
-    out = db.query("select * from drone")
-    for x in out:
-        print(x)
-
-    db.add_drone(1, [1, 2, 3])
-
-    out = db.query("select * from drone")
-    for x in out:
-        print(x)
+    out = db.query("select * from point")
+    for i in out:
+        print(i)

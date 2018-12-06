@@ -50,7 +50,7 @@ class Controller:
         counter = 0
         while not connected and counter < 10:
             try:
-                self.s_backend.connect(("0.0.0.0", 5001))
+                self.s_backend.connect(("127.0.0.1", 5001))
                 connected = True
 
                 # send unique message to get id from the backend
