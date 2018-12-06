@@ -1,24 +1,25 @@
-import mysql.connector
+
 import os
+import pymysql
 
 class DBConnection:
 
     def __init__(self):
         try:
-            self.db = mysql.connector.connect(
+            self.db = pymysql.connect(
                 host="localhost",
                 user="root",
-                passwd="student",
-                database="drones"
+                password="student",
+                db="drones"
             )
         except:
             print("make database")
             # database drones does not exist
             # so make it with the use of a .sql script
-            self.db = mysql.connector.connect(
+            self.db = pymysql.connect(
                 host="localhost",
                 user="root",
-                passwd="student",
+                password="96Pt34X74yKYf8dp",
             )
             cursor = self.db.cursor()
             parentDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
