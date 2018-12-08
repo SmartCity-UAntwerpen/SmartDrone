@@ -4,14 +4,14 @@ Folder structure:
 * dronefw - drone driver
 * DroneCore - drone core
 
-##Dependencies
+## Dependencies
 * numpy
 * networkx
 * matplotlib: to plot the map graph
 * pygame - for visualizing the simulator
 * flask - REST
 
-##JSON commands
+## JSON commands
 {
             "command": ex. "move" or "turn",
             "goal": (x,y,z),
