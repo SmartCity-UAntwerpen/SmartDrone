@@ -1,7 +1,7 @@
 
 import paho.mqtt.client as paho
 import json, socket, asyncore
-import BackendLogger
+import DroneBackend.BackendLogger as BackendLogger
 from json import JSONDecodeError
 from flask import Flask
 import sys, multiprocessing, signal
@@ -88,6 +88,8 @@ class Backend(asyncore.dispatcher):
                 self.drones[int(data["id"])] = data["position"]
                 self.logger.info("Position update. Drone id: %d, new position: (%.2f %.2f %.2f)"
                                  % (data["id"],data["position"][0],data["position"][1],data["position"][2]))
+            elif data["action"] == "status_update":
+                self.logger.info("Status update. Drone id: %d, status: %s" % (data["id"], data["status"]))
         except KeyError:
             self.logger.warn("Received message with action: %s, not enough data provided to perform action." % data["action"])
 
@@ -119,7 +121,7 @@ def link_api():
     return json.dumps(data)
 
 
-if __name__ == "__main__":
+def start_backend():
     signal.signal(signal.SIGINT, exit)
     backend = Backend("0.0.0.0", 5001, base_topic)
     api = RestApi()

@@ -22,7 +22,7 @@ Folder structure:
 
 Job:\
 { \
-    "action": job,\ 
+    "action": job,  
     "point1": marker_id,\
     "point2": marker_id,\
     //"priority": priority\

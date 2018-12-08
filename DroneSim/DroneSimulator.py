@@ -38,9 +38,10 @@ class DroneSimulator(asyncore.dispatcher):
 
         while self.running:
             data = sock.recv(2048)  # receive data with buffer of size 2048
-            if not data: exit(1, 1)
             try:
-                data = json.loads(data.decode())
+                data = data.decode()
+                if not data: continue
+                data = json.loads(data)
                 if data["action"] == "execute_command":
                     self.perform_action(data, sock)
                 elif data["action"] == "send_position":
@@ -57,8 +58,11 @@ class DroneSimulator(asyncore.dispatcher):
         connection.send(json.dumps(res).encode())
 
     def send_drone_status(self, connection):
+        status = "Idle"
+        if self.drone.is_flying(): status = "flying"
+        elif self.drone.is_armed(): status = "armed"
         res = {
-            "status": int(self.drone.status),
+            "status": status,
         }
         connection.send(json.dumps(res).encode())
 

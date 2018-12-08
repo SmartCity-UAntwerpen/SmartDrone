@@ -1,14 +1,16 @@
+import sys
+sys.path.append(sys.path[0]+"/..")          # FIXME: working directory not always the parent directory of DroneCore. ==> modules not found
 
 import errno
-import socket, time, json, sys, signal
+import socket, time, json, signal
 from json import JSONDecodeError
-import CoreLogger as clogger
-import FlightPlanner as fp
+import DroneCore.CoreLogger as clogger
+#import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
-import SharedSocket
-from Exceptions import DroneNotArmedException, CommandNotExectuedException
+from DroneCore.SharedSocket import SharedSocket
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException
 
 
 class Poller(threading.Thread):
@@ -22,7 +24,7 @@ class Poller(threading.Thread):
     def run(self):
         while self.running:
             controller.send_position_update()
-            #controller.send_status_update()
+            controller.send_status_update()
             time.sleep(2)
 
     def join(self, timeout=0):
@@ -35,7 +37,8 @@ class Controller(threading.Thread):
     running = True
     executing_flight_plan = False
     s_backend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s_execution = SharedSocket.SharedSocket()
+    s_execution = SharedSocket()
+    poller = None
     logger = clogger.logger
 
     id = -1         # id should be received from backend
@@ -44,7 +47,7 @@ class Controller(threading.Thread):
     socket_lock = threading.Lock()
 
     current_marker_id = 0
-    flight_planner = fp.FlightPlanner()
+    flight_planner = None #fp.FlightPlanner()
     jobs = [] # job list
 
     def __init__(self,ip,port):
@@ -167,7 +170,7 @@ class Controller(threading.Thread):
             res = {
                 "id": self.id,
                 "action": "status_update",
-                "position": data["status"]
+                "status": data["status"]
             }
             self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
         except JSONDecodeError:
@@ -209,11 +212,11 @@ class Controller(threading.Thread):
     def run(self):
         try:
             # Polling loop, sleep 1 s each time
-            while controller.running:
+            while self.running:
                 if len(self.jobs) is not 0:
                     # get the first job
                     job = self.jobs.pop(0)
-                time.sleep(0.01)
+                time.sleep(0.1)
         except Exception:
             exit(0, 0)
 
@@ -221,14 +224,18 @@ class Controller(threading.Thread):
         self.running = False
 
     def __del__(self):
-        self.send_position_update()
-        self.send_status_update()
-        self.mqtt.disconnect()
-        self.mqtt.loop_stop()
+        if self.mqtt:
+            self.mqtt.disconnect()
+            self.mqtt.loop_stop()
         self.s_backend.close()
-        self.s_execution.close()
-        self.s_execution.join()
-        self.poller.join()
+        if self.s_execution.isAlive():
+            self.send_position_update()
+            self.send_status_update()
+            self.s_execution.close()
+            self.s_execution.join()
+        if self.poller:
+            if self.poller.isAlive():
+                self.poller.join()
 
 
 def exit(signal, frame):
@@ -246,4 +253,4 @@ if __name__ == '__main__':
         exit(0,0)
 
     controller.current_marker_id = int(sys.argv[2])
-    controller.start()
+    controller.run()

@@ -2,7 +2,7 @@ import math
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx import NetworkXNoPath
-from Marker import Marker
+from Common.Marker import Marker
 
 from Common.DBConnection import DBConnection
 
