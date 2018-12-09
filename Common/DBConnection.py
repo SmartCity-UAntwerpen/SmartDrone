@@ -1,15 +1,17 @@
-
 import os
 import pymysql
+
 
 class DBConnection:
 
     def __init__(self):
         try:
             self.db = pymysql.connect(
+                # host="smartcity.ddns.net:3306",
                 host="localhost",
                 user="root",
                 password="student",
+                # password="smartcity",
                 db="drones"
             )
         except:
@@ -17,15 +19,21 @@ class DBConnection:
             # database drones does not exist
             # so make it with the use of a .sql script
             self.db = pymysql.connect(
+                # host="smartcity.ddns.net:3306",
                 host="localhost",
                 user="root",
-                password="96Pt34X74yKYf8dp",
+                password="student"
+                # assword="smartcity",
             )
             cursor = self.db.cursor()
-            parentDir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            path = parentDir+"\\init_DB.sql"
             # TODO search for way to run sql sript at once command SOURCE does not work.
-            # TODO: change path directory
+            # to be able to open this file from anywhere:
+            # first take the absolute path to the current working directory
+            # then split it
+            # from there add SmartDrone\Common\init_DB.sql to get the full absolute path
+            # note that this will only work if there is no other folder named SmartDrone
+            # using os so this must work on any operatings system
+            path = os.path.join(os.getcwd().split("SmartDrone", 1)[0], "SmartDrone", "Common", "init_DB.sql").replace("\\" ,"/")
             for line in open(path, 'r').readlines():
                 cursor.execute(line)
 
@@ -36,7 +44,7 @@ class DBConnection:
         try:
             cursor.execute(message)
             return cursor
-        except mysql.connector.errors.ProgrammingError:
+        except pymysql.connector.errors.ProgrammingError:
             return "invalid query"
 
     def add_drone(self, id, location):
