@@ -5,6 +5,17 @@ import pymysql
 class DBConnection:
 
     def __init__(self):
+        """
+        This class makes a connection with a mysql database called drones.
+        If the database does not exist yet, a .sql script will run, make the database and fill it.
+        Inside the database there are 2 tables: point and drone.
+
+        point consist of entries with [id,x,y,z,transitpoint],
+        each point corresponds to a physical arucomarker with an id and a x,y,z location.
+
+        drone consist of entries with [id,x,y,z]
+        each drone corresponds to a physical or simulated drone with an id and a x,y,z location.
+        """
         try:
             self.db = pymysql.connect(
                 # host="smartcity.ddns.net:3306",
@@ -32,12 +43,17 @@ class DBConnection:
             # then split it
             # from there add SmartDrone\Common\init_DB.sql to get the full absolute path
             # note that this will only work if there is no other folder named SmartDrone
-            # using os so this must work on any operatings system
+            # using os so this must work on any operating system
             path = os.path.join(os.getcwd().split("SmartDrone", 1)[0], "SmartDrone", "Common", "init_DB.sql").replace("\\" ,"/")
             for line in open(path, 'r').readlines():
                 cursor.execute(line)
 
     def query(self, message):
+        """
+        Make a query to the database
+        :param message: the query
+        :return: the answer from the database if the query was valid, "invalid query" otherwise
+        """
         # run any command on the database
         cursor = self.db.cursor()
         # check if query is valid
@@ -48,6 +64,11 @@ class DBConnection:
             return "invalid query"
 
     def add_drone(self, id, location):
+        """
+        Adds a drone to the database
+        :param id: id of drone
+        :param location: location of drone
+        """
         cursor = self.db.cursor()
         x = location[0]
         y = location[1]
@@ -58,6 +79,9 @@ class DBConnection:
 
 if __name__ == "__main__":
 
+    """
+    Small test case for DBConnection
+    """
     db = DBConnection()
     out = db.query("select * from point")
     for i in out:

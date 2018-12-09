@@ -8,18 +8,24 @@ from Common.DBConnection import DBConnection
 
 
 def distance(m1, m2):
+    """
+    :param m1: marker 1 (with location x,y,z)
+    :param m2: marker 2 (with location x,y,z)
+    :return: The Euclidean distance between m1 and m2
+    """
     return math.sqrt(pow(m2.x - m1.x, 2) + pow(m2.y - m1.y, 2) + pow(m2.z - m2.z, 2))
 
 
 class FlightPlanner:
     def __init__(self):
         """
-        sets the maxflight time
-        sets the markers
-        makes a graph
+        This class makes a graph of all the markers.
+        With the use of this graph it is possible to find the most optimal route between two markers
+        It uses the database to find all the markers in the world.
+        It sets a maxFlightDistance
         """
         self.db = DBConnection()
-        self.maxFlightTime = 1.0
+        self.maxFlightDistance = 1.0
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
 
@@ -27,7 +33,7 @@ class FlightPlanner:
     def makeGraph(self, verbose=False):
         """
         make a graph and fill the nodes with all the markers
-        for every marker check al the other markers if the distance is smaller then a maxFlightTime
+        for every marker check al the other markers, if the distance is smaller then a maxFlightTime
         add that marker as neighbour <=> there is a path between the markers with a weight equaling the distance
         this method could be improved if you make the path not bidirectional
         :param verbose: for debug prints the graph
@@ -41,7 +47,7 @@ class FlightPlanner:
             for index in self.markers:
                 if index != currentMarker:
                     d = distance(currentMarker, index)
-                    if d <= self.maxFlightTime:
+                    if d <= self.maxFlightDistance:
                         G.add_edge(currentMarker, index, weight=d)
 
         # for debug purpuses you can print de graph
@@ -134,16 +140,16 @@ class FlightPlanner:
 
     def getMarker(self, index):
         """
-        gets the marker from the array of markers
-        just for testing
         :param index: index of array markers
         :return: marker
         """
-
         return self.markers[index]
 
 
 if __name__ == "__main__":
+    """
+    Small test
+    """
     f = FlightPlanner()
     flightplan = f.findPath(1,2)
     print(flightplan)
