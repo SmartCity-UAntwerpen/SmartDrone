@@ -2,13 +2,7 @@
 import Drone, socket, signal, sys, json, asyncore
 from json import JSONDecodeError
 
-markers = [
-        (1,1,0),
-        (2,1,0),
-        (1,2,0),
-        (2,2,0),
-        (1,3,0)
-    ]
+from Common.DBConnection import DBConnection
 
 
 def exit(signal, frame):
@@ -30,6 +24,16 @@ class DroneSimulator(asyncore.dispatcher):
         self.listen(1)          # only allow one incomming connection
         self.running = True
         self.drone.black_box.info("Drone simulator started.")
+        self.markers = self.get_markers()
+
+    def get_markers(self):
+        db = DBConnection()
+        # x,y,z,transitpoint
+        markers = []
+        for m in db.query("select * from point"):
+            markers.append((m[1], m[2], m[3]))
+
+        return markers
 
     def handle_accept(self):
         pair = self.accept()  # wait for a connection
@@ -87,7 +91,7 @@ class DroneSimulator(asyncore.dispatcher):
         try:
             if command["command"] == "set_position_marker":
                 if command["id"] is not None:
-                    goal = markers[command["id"]]
+                    goal = self.markers[command["id"]]
                     self.drone.setCoordinates(goal[0], goal[1], goal[2])
                     conn.send(b'ACK')
                     return
@@ -173,7 +177,7 @@ class DroneSimulator(asyncore.dispatcher):
 
                 elif command["command"] == "center":
                     if command["id"] is not None:
-                        marker = markers[command["id"]]
+                        marker = self.markers[command["id"]]
                         self.drone.center(marker[0],marker[1])
                         conn.send(b'ACK')
                         return
