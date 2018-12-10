@@ -59,7 +59,7 @@ class FlightPlanner:
 
         return G
 
-    def findPath(self, id_marker1, id_marker2):
+    def find_path(self, id_marker1, id_marker2):
         """
         use dijkstra to find the path between marker m1 and m2
         if no path exist return an empty message
@@ -151,5 +151,5 @@ if __name__ == "__main__":
     Small test
     """
     f = FlightPlanner()
-    flightplan = f.findPath(1,2)
+    flightplan = f.find_path(1, 2)
     print(flightplan)

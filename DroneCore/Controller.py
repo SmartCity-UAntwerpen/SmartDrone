@@ -5,7 +5,7 @@ import errno
 import socket, time, json, signal
 from json import JSONDecodeError
 import DroneCore.CoreLogger as clogger
-#import Common.FlightPlanner as fp
+import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
@@ -47,7 +47,7 @@ class Controller(threading.Thread):
     socket_lock = threading.Lock()
 
     current_marker_id = 0
-    flight_planner = None #fp.FlightPlanner()
+    flight_planner = fp.FlightPlanner()
     jobs = [] # job list
 
     def __init__(self,ip,port):
@@ -204,7 +204,7 @@ class Controller(threading.Thread):
                 self.executing_flight_plan = True
                 self.execute_flight_plan(plan)
                 self.executing_flight_plan = False
-            plan = self.flight_planner.find_path(job["point1"],job["point2"])
+            plan = self.flight_planner.find_path(job["point1"], job["point2"])
             self.executing_flight_plan = True
             self.execute_flight_plan(plan)
             self.executing_flight_plan = False
@@ -249,8 +249,8 @@ def exit(signal, frame):
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, exit)
     controller = Controller("localhost", int(sys.argv[1]))
+    controller.current_marker_id = int(sys.argv[2])
     if not controller.start_controller():
         exit(0,0)
 
-    controller.current_marker_id = int(sys.argv[2])
     controller.run()

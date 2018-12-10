@@ -1,5 +1,8 @@
+import sys
+sys.path.append(sys.path[0]+"/..")
 
-import Drone, socket, signal, sys, json, asyncore
+import DroneSim.Drone as Drone
+import socket, signal, json, asyncore
 from json import JSONDecodeError
 
 from Common.DBConnection import DBConnection
