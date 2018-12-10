@@ -25,7 +25,7 @@ class FlightPlanner:
         It sets a maxFlightDistance
         """
         self.db = DBConnection()
-        self.maxFlightDistance = 1.0
+        self.maxFlightDistance = 1.6
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
 
@@ -42,9 +42,9 @@ class FlightPlanner:
         # TODO replace this method to the backbone and let the FlightPlanner import the map from the backbone
 
         G = nx.Graph()
-        G.add_nodes_from(self.markers)
-        for currentMarker in self.markers:
-            for index in self.markers:
+        G.add_nodes_from(self.markers.values())
+        for currentMarker in self.markers.values():
+            for index in self.markers.values():
                 if index != currentMarker:
                     d = distance(currentMarker, index)
                     if d <= self.maxFlightDistance:
@@ -68,8 +68,8 @@ class FlightPlanner:
         :param m2: marker 2 the endpoint
         :return: json with instructions
         """
-        m1 = self.getMarker(id_marker1)
-        m2 = self.getMarker(id_marker2)
+        m1 = self.markers[id_marker1]
+        m2 = self.markers[id_marker2]
         flight_plan = {
             "commands": [],
         }
@@ -77,7 +77,6 @@ class FlightPlanner:
         try:
             path = nx.dijkstra_path(self.G, m1, m2)
         except NetworkXNoPath:
-            print("no path to node")
             path = None
 
         if path is not None:
@@ -103,23 +102,10 @@ class FlightPlanner:
                 flight_plan["commands"].append(command)
 
             # land
-            while fly_height >= 0.1:
-                fly_height -= 0.1
-                command = {
-                    "command": "down",
-                    "distance": 0.1,
-                    "velocity": 0.2
-                }
-                flight_plan["commands"].append(command)
-                command = {
-                    "command": "center",
-                    "id": m2.id
-                }
-                flight_plan["commands"].append(command)
-
-            # get to ground and shutdown engine
             command = {
-                "command": "land"
+                "command": "guided_land",
+                "velocity": 0.2,
+                "id": m2.id
             }
             flight_plan["commands"].append(command)
 
@@ -132,18 +118,11 @@ class FlightPlanner:
         """
 
         # x,y,z,transitpoint
-        markers = []
+        markers = {}
         for m in self.db.query("select * from point"):
-            markers.append(Marker(m[1], m[2], m[3],m[0]))
+            markers[m[0]] = Marker(m[1], m[2], m[3],m[0])
 
         return markers
-
-    def getMarker(self, index):
-        """
-        :param index: index of array markers
-        :return: marker
-        """
-        return self.markers[index]
 
 
 if __name__ == "__main__":

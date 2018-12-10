@@ -58,8 +58,9 @@ class Drone:
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 
-    def guided_land(self,velocity):
+    def guided_land(self,velocity,x,y):
         self.black_box.info("Drone landing (guided).")
+        self.center(x,y)
         self.moveDistance(0, 0, -self.z, velocity=velocity, deviation_sigma=0)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
@@ -203,7 +204,7 @@ class Drone:
 
     def check_before_flight(self, distance, velocity):
         if distance < 0 or velocity < 0:
-            self.black_box.error("Distance or velocity is not valid (<0).")
+            self.black_box.error("Distance or velocity is not valid (< 0).")
             return False
         if self.status is not DroneStatusEnum.Flying:
             self.black_box.error("Drone has not taken off yet!")
