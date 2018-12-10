@@ -1,8 +1,10 @@
 import sys
-sys.path.append(sys.path[0]+"/..")
+
+sys.path.append(sys.path[0] + "/..")
 
 import DroneSim.Drone as Drone
 import socket, signal, json, asyncore
+import Common.Marker as Marker
 from json import JSONDecodeError
 
 from Common.DBConnection import DBConnection
@@ -16,15 +18,14 @@ def exit(signal, frame):
 
 
 class DroneSimulator(asyncore.dispatcher):
-
     drone = Drone.Drone()
 
-    def __init__(self,ip,port):
+    def __init__(self, ip, port):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
         self.bind((ip, port))
-        self.listen(1)          # only allow one incomming connection
+        self.listen(1)  # only allow one incomming connection
         self.running = True
         self.drone.black_box.info("Drone simulator started.")
         self.markers = self.get_markers()
@@ -34,7 +35,8 @@ class DroneSimulator(asyncore.dispatcher):
         # x,y,z,transitpoint
         markers = []
         for m in db.query("select * from point"):
-            markers.append((m[1], m[2], m[3]))
+            marker = Marker.Marker(m[1], m[2], m[3], m[0])
+            markers.append(marker)
 
         return markers
 
@@ -66,8 +68,10 @@ class DroneSimulator(asyncore.dispatcher):
 
     def send_drone_status(self, connection):
         status = "Idle"
-        if self.drone.is_flying(): status = "flying"
-        elif self.drone.is_armed(): status = "armed"
+        if self.drone.is_flying():
+            status = "flying"
+        elif self.drone.is_armed():
+            status = "armed"
         res = {
             "status": status,
         }
@@ -81,7 +85,7 @@ class DroneSimulator(asyncore.dispatcher):
         "rate": [0, 5]
     }
 
-    def check_values(self,command,*args):
+    def check_values(self, command, *args):
         self.drone.black_box.warn("checking values")
         for to_check in args:
             if command[to_check] is None: return False
@@ -103,7 +107,7 @@ class DroneSimulator(asyncore.dispatcher):
 
             if not self.drone.is_armed():
                 if command["command"] == "takeoff":
-                    if self.check_values(command,"height","velocity"):
+                    if self.check_values(command, "height", "velocity"):
                         self.drone.takeOff(command["height"], command["velocity"])
                         conn.send(b'ACK')
                         return
@@ -125,63 +129,63 @@ class DroneSimulator(asyncore.dispatcher):
                 elif command["command"] == "move":
                     if command["goal"] is not None:
                         goal = command["goal"]
-                        if self.check_values(command,"velocity"):
-                            self.drone.moveDistance(goal[0],goal[1],goal[2],command["velocity"])
+                        if self.check_values(command, "velocity"):
+                            self.drone.moveDistance(goal[0], goal[1], goal[2], command["velocity"])
                             conn.send(b'ACK')
                             return
 
                 elif command["command"] == "forward":
-                    if self.check_values(command,"distance","velocity"):
-                        self.drone.forward(command["distance"],command["velocity"])
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.forward(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "backward":
                     if self.check_values(command, "distance", "velocity"):
-                        self.drone.backward(command["distance"],command["velocity"])
+                        self.drone.backward(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "left":
                     if self.check_values(command, "distance", "velocity"):
-                        self.drone.left(command["distance"],command["velocity"])
+                        self.drone.left(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "right":
                     if self.check_values(command, "distance", "velocity"):
-                        self.drone.right(command["distance"],command["velocity"])
+                        self.drone.right(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "up":
                     if self.check_values(command, "distance", "velocity"):
-                        self.drone.up(command["distance"],command["velocity"])
+                        self.drone.up(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "down":
                     if self.check_values(command, "distance", "velocity"):
-                        self.drone.down(command["distance"],command["velocity"])
+                        self.drone.down(command["distance"], command["velocity"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "turn_left":
                     if self.check_values(command, "angle", "rata"):
-                        self.drone.turnLeft(command["angle"],command["rate"])
+                        self.drone.turnLeft(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "turn_right":
                     if self.check_values(command, "angle", "rata"):
-                        self.drone.turnRight(command["angle"],command["rate"])
+                        self.drone.turnRight(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "center":
                     if command["id"] is not None:
                         marker = self.markers[command["id"]]
-                        self.drone.center(marker[0],marker[1])
+                        self.drone.center(marker[0], marker[1])
                         conn.send(b'ACK')
                         return
 
@@ -199,7 +203,8 @@ class DroneSimulator(asyncore.dispatcher):
 
             conn.send(b'ERROR')
             return
-        except JSONDecodeError: self.drone.black_box.error("Received wrong command message (no JSON).")
+        except JSONDecodeError:
+            self.drone.black_box.error("Received wrong command message (no JSON).")
 
     def __del__(self):
         self.close()
