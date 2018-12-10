@@ -32,20 +32,29 @@ class Visualizer:
         self.max_x = -math.inf
         self.max_y = -math.inf
 
+        self.drones = {}
+        self.markers = self.init_markers()
+
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic
         self.mqtt = paho.Client()
-        self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
+        self.mqtt.message_callback_add(base_mqtt_topic + "/backed", self.mqtt_callback)
         self.mqtt.connect(mqtt_broker, mqtt_port, 60)
         self.mqtt.subscribe(base_mqtt_topic + "/#")
         self.mqtt.loop_start()
 
-        self.markers = self.init_markers()
-        self.drones = {}
-
         self.screen = pygame.display.set_mode((width, height))
         pygame.display.set_caption("Drone Simulator")
         pygame.display.flip()
+
+        pygame.font.init()
+        font = pygame.font.SysFont("monospace", 14)
+
+        label = font.render("Waiting for mqtt message", 1, (255, 255, 0))
+        self.screen.blit(label, (self.width / 3, self.height / 2))
+        label2 = font.render("on " + base_mqtt_topic + "/backend", 1, (255, 255, 0))
+        self.screen.blit(label2,(self.width/3, self.height/2+20))
+        pygame.display.update()
 
     def mqtt_callback(self, mosq, obj, msg):
         """
@@ -57,7 +66,7 @@ class Visualizer:
         if data["action"] == "position_update":
             self.drones[int(data["id"])] = data["position"]
 
-        self.update();
+        self.update()
 
     def init_markers(self):
         """
@@ -71,7 +80,7 @@ class Visualizer:
         # x,y,z,transitpoint
         markers = []
         for m in db.query("select * from point"):
-            markers.append(Marker(m[1], m[2], m[3],m[0]))
+            markers.append(Marker(m[1], m[2], m[3], m[0]))
 
         for marker in markers:
             x = marker.x
@@ -150,13 +159,14 @@ class Visualizer:
             drone = Marker(location[0], location[1], location[2], i)
             [pos_x, pos_y] = self.calculate_screen_location(drone)
             random.seed(i)
-            pygame.draw.circle(self.screen, (random.randint(0,255), random.randint(0,255), random.randint(0,255)), (pos_x, pos_y), 5)
+            pygame.draw.circle(self.screen, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)),
+                               (pos_x, pos_y), 5)
 
     def update(self):
         """
         This method is called from mqtt_callback. It clears the screen and draws the markers and drones.
         """
-        self.screen.fill((0, 0, 0))
+        # self.screen.fill((0, 0, 0))
         self.draw_markers(self.markers)
         self.draw_drones()
         pygame.display.update()
