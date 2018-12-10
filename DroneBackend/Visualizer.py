@@ -38,7 +38,7 @@ class Visualizer:
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic
         self.mqtt = paho.Client()
-        self.mqtt.message_callback_add(base_mqtt_topic + "/backed", self.mqtt_callback)
+        self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
         self.mqtt.connect(mqtt_broker, mqtt_port, 60)
         self.mqtt.subscribe(base_mqtt_topic + "/#")
         self.mqtt.loop_start()
@@ -166,7 +166,7 @@ class Visualizer:
         """
         This method is called from mqtt_callback. It clears the screen and draws the markers and drones.
         """
-        # self.screen.fill((0, 0, 0))
+        self.screen.fill((0, 0, 0))
         self.draw_markers(self.markers)
         self.draw_drones()
         pygame.display.update()
