@@ -80,7 +80,7 @@ class Visualizer:
         # x,y,z,transitpoint
         markers = []
         for m in db.query("select * from point"):
-            markers.append(Marker(m[1], m[2], m[3], m[0]))
+            markers.append(Marker(m[2], m[3], m[4], m[1]))
 
         for marker in markers:
             x = marker.x

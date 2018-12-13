@@ -35,8 +35,8 @@ class DroneSimulator(asyncore.dispatcher):
         # x,y,z,transitpoint
         markers = {}
         for m in db.query("select * from point"):
-            marker = Marker.Marker(m[1], m[2], m[3], m[0])
-            markers[m[0]] = marker
+            marker = Marker.Marker(m[2], m[3], m[4], m[1])
+            markers[m[1]] = marker
 
         return markers
 

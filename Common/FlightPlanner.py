@@ -120,7 +120,7 @@ class FlightPlanner:
         # x,y,z,transitpoint
         markers = {}
         for m in self.db.query("select * from point"):
-            markers[m[0]] = Marker(m[1], m[2], m[3],m[0])
+            markers[m[1]] = Marker(m[2], m[3], m[4], m[1])
 
         return markers
 
