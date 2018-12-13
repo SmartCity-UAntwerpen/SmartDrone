@@ -1,4 +1,3 @@
-
 import paho.mqtt.client as paho
 import json, socket, asyncore
 import DroneBackend.BackendLogger as BackendLogger
@@ -14,8 +13,7 @@ app = Flask("DroneBackend")
 
 
 class RestApi():
-
-    api = multiprocessing.Process(target=app.run, args=("0.0.0.0",8082))
+    api = multiprocessing.Process(target=app.run, args=("0.0.0.0", 8082))
 
     def start(self):
         self.api.start()
@@ -26,17 +24,16 @@ class RestApi():
 
 
 class Backend(asyncore.dispatcher):
-
     logger = BackendLogger.logger
     mqtt = None
 
-    def __init__(self,ip,port,base_mqtt_topic):
+    def __init__(self, ip, port, base_mqtt_topic):
         # Start tcp socket, drones connect to this socket to add themselves to the network
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
         self.set_reuse_addr()
-        self.bind((ip,port))
-        self.listen(3)      # Allow 3 drones to be connected to the backend with tcp at the same time
+        self.bind((ip, port))
+        self.listen(3)  # Allow 3 drones to be connected to the backend with tcp at the same time
 
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic
@@ -87,16 +84,17 @@ class Backend(asyncore.dispatcher):
             if data["action"] == "position_update":
                 self.drones[int(data["id"])] = data["position"]
                 self.logger.info("Position update. Drone id: %d, new position: (%.2f %.2f %.2f)"
-                                 % (data["id"],data["position"][0],data["position"][1],data["position"][2]))
+                                 % (data["id"], data["position"][0], data["position"][1], data["position"][2]))
             elif data["action"] == "status_update":
                 self.logger.info("Status update. Drone id: %d, status: %s" % (data["id"], data["status"]))
         except KeyError:
-            self.logger.warn("Received message with action: %s, not enough data provided to perform action." % data["action"])
+            self.logger.warn(
+                "Received message with action: %s, not enough data provided to perform action." % data["action"])
 
     def find_location(self, id):
         return self.drones[id]
 
-    def set_location(self,id,location):
+    def set_location(self, id, location):
         if id in self.drones.keys():
             self.drones[id] = location
 
@@ -115,10 +113,15 @@ def exit(signal, frame):
     sys.exit(0)
 
 
-@app.route('/link')
-def link_api():
+@app.route('/link/transitmap')
+def transitmap_api():
     data = json.loads(open('carlinks.json').read())
     return json.dumps(data)
+
+
+@app.route('/link/flagtransitmap')
+def flagtransitmap_api():
+    pass
 
 
 def start_backend():
@@ -128,7 +131,6 @@ def start_backend():
     api.start()
     asyncore.loop()
 
-
-    #TODO: add nodes from database
-    #TODO: make use of flightplanner
-    #TODO: accept a job from the maas
+    # TODO: add nodes from database
+    # TODO: make use of flightplanner
+    # TODO: accept a job from the maas
