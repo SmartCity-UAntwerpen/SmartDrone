@@ -25,7 +25,7 @@ class FlightPlanner:
         It sets a maxFlightDistance
         """
         self.db = DBConnection()
-        self.maxFlightDistance = 1.6
+        self.maxFlightDistance = 1
         self.markers = self.setMarkers()
         self.G = self.makeGraph()
 
@@ -111,6 +111,13 @@ class FlightPlanner:
 
         return flight_plan
 
+    def calculate_cost(self, id_marker1, id_marker2):
+        m1 = self.markers[id_marker1]
+        m1.print()
+        m2 = self.markers[id_marker2]
+        m2.print()
+        return nx.shortest_path_length(self.G, m1,m2, weight='weight')
+
     def setMarkers(self):
         """
         get the markers from the database and store them in an array
@@ -121,7 +128,6 @@ class FlightPlanner:
         markers = {}
         for m in self.db.query("select * from point"):
             markers[m[1]] = Marker(m[2], m[3], m[4], m[1])
-
         return markers
 
 
@@ -130,5 +136,7 @@ if __name__ == "__main__":
     Small test
     """
     f = FlightPlanner()
-    flightplan = f.find_path(1, 2)
+    cost = f.calculateCost(0, 4)
+    print(cost)
+    flightplan = f.find_path(0,4)
     print(flightplan)
