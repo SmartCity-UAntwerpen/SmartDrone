@@ -1,82 +1,256 @@
 #!/usr/bin/env python3
 
+import sys, time
 
-from drone import *
+sys.path.append(sys.path[0] + "/..")
 
-Drone=DroneClass()
-
-LastStatusTime=0
-StatusUpdateInterval=3
-
-
-while (True):
-    try:
-        #Print status
-        if (time.time()-LastStatusTime>StatusUpdateInterval):
-            print ("Battery voltage:%s" % (Drone.Vbat))
-            print ("Status:%s" % (Drone.DroneStatus))
-            print ("")
-            LastStatusTime=time.time()
+import dronefw.drone as drone
+import socket, signal, json, asyncore, threading
+import Common.Marker as Marker
+from json import JSONDecodeError
+import dronefw.logger as logger
+from Common.DBConnection import DBConnection
 
 
-        #Flight commands
-        if (Drone.DroneStatus != DroneStatusEnum.Flying):
-            if (Drone.Gamepad.Start==1):
-                print ("Arm")
-                Drone.Arm()
-                Drone.mc.TakeOff(0.3, 0.4)
-        if (Drone.DroneStatus == DroneStatusEnum.Flying):
-            if (Drone.Gamepad.DpadUp==1):
-                Drone.mc.Forward(0.2, velocity=0.5)
-            if (Drone.Gamepad.DpadDown==1):
-                Drone.mc.Back(0.2, velocity=0.5)
-            if (Drone.Gamepad.DpadRight==1):
-                Drone.mc.Right(0.2, velocity=0.5)
-            if (Drone.Gamepad.DpadLeft==1):
-                Drone.mc.Left(0.2, velocity=0.5)
-            if (Drone.Gamepad.ButtonY==1):
-                Drone.mc.Up(0.2, velocity=0.5)
-            if (Drone.Gamepad.ButtonA==1):
-                Drone.mc.Down(0.2, velocity=0.5)
-            if (Drone.Gamepad.ButtonX==1):
-                Drone.mc.TurnLeft(30, 90)
-            if (Drone.Gamepad.ButtonB==1):
-                Drone.mc.TurnRight(30, 90)
-            if (Drone.Gamepad.R1==1):
-                Drone.ArucoNav.Center()
-            if (Drone.Gamepad.R2==1):
-                #Drone.mc.MoveDistance(1.0, 0, 0, 0.5)
-                Drone.ArucoNav.GuidedLand()
-            if (Drone.Gamepad.L2==1):
-                # Main autonomous sequence
+def exit(signal, frame):
+    print("Closing socket...")
+    # emergency land drone?
+    print("Drone tured off.")
+    sys.exit(0)
 
 
-                Drone.ArucoNav.Center()
-                time.sleep(1)
+class ArmThread(threading.Thread):
 
-                print('Move')
+    drone_connection = None
 
-                Drone.mc.Forward(2.0, velocity=0.5)
-                Drone.ArucoNav.Center()
+    def __init__(self, drone_connection):
+        super().__init__()
+        self.drone_connection = drone_connection
 
-                Drone.mc.Forward(2.0, velocity=0.5)
-                Drone.ArucoNav.Center()
+    def run(self):
+        if self.drone_connection is not None:
+            while self.drone_connection.running:
+                if self.drone_connection.drone.Gamepad.Start == 1:
+                    self.drone_connection.drone.Arm()
+                time.sleep(0.01)
 
-                Drone.mc.Forward(2.0, velocity=0.5)
-                Drone.ArucoNav.Center()
 
-                Drone.mc.Forward(2.0, velocity=0.5)
-                Drone.ArucoNav.Center()
-                Drone.ArucoNav.Center()
+class DroneConnector(asyncore.dispatcher):
 
-                Drone.mc.Down(0.4, velocity=0.4)
+    drone = drone.DroneClass()
+    logger = logger.create_logger()
 
-                Drone.ArucoNav.Center()
+    def __init__(self, ip, port):
+        LastStatusTime = 0
+        StatusUpdateInterval = 3
+        if time.time() - LastStatusTime > StatusUpdateInterval:
+            print("Battery voltage:%s" % (self.drone.Vbat))
+            print("Status:%s" % (self.drone.DroneStatus))
+            print("")
+            LastStatusTime = time.time()
+            asyncore.dispatcher.__init__(self)
+            self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.set_reuse_addr()
+            self.bind((ip, port))
+            self.listen(1)  # only allow one incomming connection
+            self.running = True
+            self.logger.info("Drone process started.")
+            self.markers = self.get_markers()
+            self.arm_thread = ArmThread(self)
+            self.arm_thread.start()
+        else:
+            self.running = False
 
-                time.sleep (1)
+    def get_markers(self):
+        db = DBConnection()
+        # x,y,z,transitpoint
+        markers = {}
+        for m in db.query("select * from point"):
+            marker = Marker.Marker(m[2], m[3], m[4], m[1])
+            markers[m[1]] = marker
+        if len(markers.keys()) == 0:
+            self.logger.info("No markers loaded. Empty response from database.")
+        return markers
 
-                Drone.mc.Down(1.0, velocity=0.4)
-                Drone.mc.land()
-    except Exception as e:
-        print ("exception:%s" % e)
+    def handle_accept(self):
+        pair = self.accept()  # wait for a connection
+        if pair is None: return
+        sock, addr = pair
 
+        while self.running:
+            data = sock.recv(2048)  # receive data with buffer of size 2048
+            try:
+                data = data.decode()
+                if not data: continue
+                data = json.loads(data)
+                if data["action"] == "execute_command":
+                    self.perform_action(data, sock)
+                elif data["action"] == "send_position":
+                    self.send_drone_position(sock)
+                elif data["action"] == "send_status":
+                    self.send_drone_status(sock)
+            except JSONDecodeError:
+                self.logger.error("Received non json message, dropping message.")
+
+    def send_drone_position(self, connection):
+        res = {
+            "position": (float(self.drone.px), float(self.drone.py), float(self.drone.pz)),
+        }
+        connection.send(json.dumps(res).encode())
+
+    def send_drone_status(self, connection):
+        res = {"status": self.drone.DroneStatus.value}
+        connection.send(json.dumps(res).encode())
+
+    boundries = {
+        "height": [0, 10],
+        "velocity": [0, 0.5],
+        "distance": [0, 5],
+        "angle": [0, 360],
+        "rate": [0, 5]
+    }
+
+    def check_values(self, command, *args):
+        for to_check in args:
+            try:
+                if command[to_check] is None: return False
+                values = self.boundries[to_check]
+                if not (values[0] <= command[to_check] <= values[1]):
+                    return False
+            except KeyError: return False
+        return True
+
+    def perform_action(self, command, conn):
+        try:
+            if command["command"] == "set_position_marker":
+                if command["id"] is not None:
+                    if command["id"] in self.markers.keys():
+                        marker = self.markers[command["id"]]
+                        self.drone.px = marker.x
+                        self.drone.py = marker.y
+                        self.drone.pz = marker.z
+                        conn.send(b'ACK')
+                        return
+                conn.send(b'ERROR')
+                return
+
+            if self.drone.DroneStatus == drone.DroneStatusEnum.Idle:
+                if command["command"] == "arm":
+                    self.drone.Arm()
+                    conn.send(b'ACK')
+                    return
+
+                conn.send(b'NOT_ARMED')
+                return
+
+            if self.drone.DroneStatus == drone.DroneStatusEnum.Armed:
+                if command["command"] == "takeoff":
+                    if self.check_values(command, "height", "velocity"):
+                        self.drone.mc.TakeOff(command["height"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                conn.send(b'ERROR')
+                return
+
+            if self.drone.DroneStatus == drone.DroneStatusEnum.Flying:
+                if command["command"] == "land":
+                    self.drone.mc.land()
+                    conn.send(b'ACK')
+                    return
+
+                elif command["command"] == "guided_land":
+                    self.drone.ArucoNav.GuidedLand()
+                    conn.send(b'ACK')
+                    return
+
+                elif command["command"] == "move":
+                    if command["goal"] is not None:
+                        goal = command["goal"]
+                        if self.check_values(command, "velocity"):
+                            self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])
+                            conn.send(b'ACK')
+                            return
+
+                elif command["command"] == "forward":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Forward(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "backward":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Backward(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "left":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Left(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "right":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Right(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "up":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Up(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "down":
+                    if self.check_values(command, "distance", "velocity"):
+                        self.drone.mc.Down(command["distance"], command["velocity"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "turn_left":
+                    if self.check_values(command, "angle", "rata"):
+                        self.drone.mc.TurnLeft(command["angle"], command["rate"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "turn_right":
+                    if self.check_values(command, "angle", "rata"):
+                        self.drone.mc.TurnRight(command["angle"], command["rate"])
+                        conn.send(b'ACK')
+                        return
+
+                elif command["command"] == "center":
+                    if self.drone.ArucoNav.Center() is None:
+                        self.drone.mc.land()
+                        conn.send(b'ABORT')
+                    else: conn.send(b'ACK')
+                    return
+
+                conn.send(b'ERROR')
+                return
+
+            conn.send(b'STATE_ERROR')
+            return
+        except Exception as e:
+            if type(e) == JSONDecodeError:
+                self.logger.error("Received wrong command message (no JSON).")
+            else:
+                self.logger.error("Command aborted.")
+                conn.send(b'ABORT')
+
+    def __del__(self):
+        self.close()
+        self.running = False
+        self.arm_thread.join()
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, exit)
+
+    drone_connection = DroneConnector("127.0.0.1", int(sys.argv[1]))
+
+    if drone_connection.running:
+        asyncore.loop()
+    else:
+        print("Error starting drone.")

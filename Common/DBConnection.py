@@ -25,7 +25,7 @@ class DBConnection:
                 password=password,
                 db="drones"
             )
-        except:
+        except :
             print("make database")
             # database drones does not exist
             # so make it with the use of a .sql script

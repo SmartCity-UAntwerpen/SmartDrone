@@ -3,11 +3,27 @@ import sys
 sys.path.append(sys.path[0] + "/..")
 
 import DroneSim.Drone as Drone
-import socket, signal, json, asyncore
+import socket, signal, json, asyncore, threading, time
 import Common.Marker as Marker
 from json import JSONDecodeError
 
 from Common.DBConnection import DBConnection
+
+
+class ArmThread(threading.Thread):
+
+    drone_connection = None
+
+    def __init__(self, drone_connection):
+        super().__init__()
+        self.drone_connection = drone_connection
+
+    def run(self):
+        if self.drone_connection is not None:
+            while self.drone_connection.running:
+                if input("").lower() == "arm":
+                    self.drone_connection.drone.arm()
+                time.sleep(0.01)
 
 
 def exit(signal, frame):
@@ -29,6 +45,8 @@ class DroneSimulator(asyncore.dispatcher):
         self.running = True
         self.drone.black_box.info("Drone simulator started.")
         self.markers = self.get_markers()
+        self.arm_thread = ArmThread(self)
+        self.arm_thread.start()
 
     def get_markers(self):
         db = DBConnection()
@@ -37,7 +55,8 @@ class DroneSimulator(asyncore.dispatcher):
         for m in db.query("select * from point"):
             marker = Marker.Marker(m[2], m[3], m[4], m[1])
             markers[m[1]] = marker
-
+        if len(markers.keys()) == 0:
+            self.drone.black_box.info("No markers loaded. Empty response from database.")
         return markers
 
     def handle_accept(self):
@@ -67,14 +86,7 @@ class DroneSimulator(asyncore.dispatcher):
         connection.send(json.dumps(res).encode())
 
     def send_drone_status(self, connection):
-        status = "Idle"
-        if self.drone.is_flying():
-            status = "flying"
-        elif self.drone.is_armed():
-            status = "armed"
-        res = {
-            "status": status,
-        }
+        res = {"status": self.drone.status.value}
         connection.send(json.dumps(res).encode())
 
     boundries = {
@@ -216,18 +228,19 @@ class DroneSimulator(asyncore.dispatcher):
 
             conn.send(b'STATE_ERROR')
             return
-        except JSONDecodeError:
-            self.drone.black_box.error("Received wrong command message (no JSON).")
+        except Exception as e:
+            if type(e) == JSONDecodeError:
+                self.drone.black_box.error("Received wrong command message (no JSON).")
+            else:
+                self.drone.black_box.error("Command aborted.")
 
     def __del__(self):
         self.close()
         self.running = False
+        self.arm_thread.join()
 
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
     backend = DroneSimulator("127.0.0.1", int(sys.argv[1]))
-
-    # initialize markers
-
     asyncore.loop()
