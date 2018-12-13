@@ -5,3 +5,6 @@ class DroneNotArmedException(Exception):
 
 class CommandNotExectuedException(Exception):
     pass
+
+class StateException(Exception):
+    pass

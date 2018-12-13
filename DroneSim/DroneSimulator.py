@@ -33,10 +33,10 @@ class DroneSimulator(asyncore.dispatcher):
     def get_markers(self):
         db = DBConnection()
         # x,y,z,transitpoint
-        markers = []
+        markers = {}
         for m in db.query("select * from point"):
             marker = Marker.Marker(m[1], m[2], m[3], m[0])
-            markers.append(marker)
+            markers[m[0]] = marker
 
         return markers
 
@@ -86,26 +86,38 @@ class DroneSimulator(asyncore.dispatcher):
     }
 
     def check_values(self, command, *args):
-        self.drone.black_box.warn("checking values")
         for to_check in args:
-            if command[to_check] is None: return False
-            values = self.boundries[to_check]
-            if not (values[0] <= command[to_check] <= values[1]):
-                return False
+            try:
+                if command[to_check] is None: return False
+                values = self.boundries[to_check]
+                if not (values[0] <= command[to_check] <= values[1]):
+                    return False
+            except KeyError: return False
         return True
 
     def perform_action(self, command, conn):
         try:
             if command["command"] == "set_position_marker":
                 if command["id"] is not None:
-                    goal = self.markers[command["id"]]
-                    self.drone.setCoordinates(goal[0], goal[1], goal[2])
-                    conn.send(b'ACK')
-                    return
+                    if command["id"] in self.markers.keys():
+                        marker = self.markers[command["id"]]
+                        self.drone.setCoordinates(marker.x, marker.y, marker.z)
+                        conn.send(b'ACK')
+                        return
                 conn.send(b'ERROR')
                 return
 
-            if not self.drone.is_armed():
+            if self.drone.is_idle():
+                # not armed return
+                if command["command"] == "arm":
+                    self.drone.arm()
+                    conn.send(b'ACK')
+                    return
+
+                conn.send(b'NOT_ARMED')
+                return
+
+            if self.drone.is_armed():
                 if command["command"] == "takeoff":
                     if self.check_values(command, "height", "velocity"):
                         self.drone.takeOff(command["height"], command["velocity"])
@@ -117,7 +129,7 @@ class DroneSimulator(asyncore.dispatcher):
                     conn.send(b'ACK')
                     return
 
-                conn.send(b'NOT_ARMED')
+                conn.send(b'ERROR')
                 return
 
             if self.drone.is_flying():
@@ -125,6 +137,15 @@ class DroneSimulator(asyncore.dispatcher):
                     self.drone.land()
                     conn.send(b'ACK')
                     return
+
+                elif command["command"] == "guided_land":
+                    if self.check_values(command, "velocity"):
+                        if command["id"] is not None:
+                            if command["id"] in self.markers.keys():
+                                marker = self.markers[command["id"]]
+                                self.drone.guided_land(command["velocity"], marker.x, marker.y)
+                                conn.send(b'ACK')
+                                return
 
                 elif command["command"] == "move":
                     if command["goal"] is not None:
@@ -184,24 +205,16 @@ class DroneSimulator(asyncore.dispatcher):
 
                 elif command["command"] == "center":
                     if command["id"] is not None:
-                        marker = self.markers[command["id"]]
-                        self.drone.center(marker[0], marker[1])
-                        conn.send(b'ACK')
+                        if command["id"] in self.markers.keys():
+                            marker = self.markers[command["id"]]
+                            self.drone.center(marker.x, marker.y)
+                            conn.send(b'ACK')
                         return
 
                 conn.send(b'ERROR')
                 return
 
-            if self.drone.is_idle():
-                if command["command"] == "arm":
-                    self.drone.arm()
-                    conn.send(b'ACK')
-                    return
-
-                conn.send(b'ERROR')
-                return
-
-            conn.send(b'ERROR')
+            conn.send(b'STATE_ERROR')
             return
         except JSONDecodeError:
             self.drone.black_box.error("Received wrong command message (no JSON).")

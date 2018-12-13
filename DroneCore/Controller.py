@@ -10,7 +10,7 @@ import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
 from DroneCore.SharedSocket import SharedSocket
-from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException
 
 
 class Poller(threading.Thread):
@@ -76,9 +76,12 @@ class Controller(threading.Thread):
                 self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
                 self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
                 self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
-                self.mqtt.subscribe(data["mqtt_topic"] + "/#")
+                self.mqtt.subscribe(data["mqtt_topic"])
+                self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))
                 self.mqtt.loop_start()
                 self.backend_topic = data["mqtt_topic"] + "/backend"
+
+                self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
 
                 self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
             except socket.error as error:
@@ -130,6 +133,8 @@ class Controller(threading.Thread):
             raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
             raise CommandNotExectuedException()         # Command failed
+        if data == b'STATE_ERROR':
+            raise StateException()                      # Command failed
         # Command executed successfully
 
     def public_mqtt_callback(self, mosq, obj, msg):
@@ -144,7 +149,11 @@ class Controller(threading.Thread):
 
             if data["action"] == "no_plan_job":
                 # add job to the queue
-                self.jobs.append(data)
+                try:
+                    self.logger.info("Received job from marker %d to %d." % (data["point1"], data["point2"]))
+                    self.jobs.append(data)
+                except KeyError:
+                    self.logger.warn("Recieved incomplete job data.")
 
         except JSONDecodeError:
             self.logger.warn("Received new mqtt message on unique topic, message is not in JSON format.")
@@ -180,6 +189,7 @@ class Controller(threading.Thread):
         while len(plan["commands"]) != 0 and self.executing_flight_plan:
             command = plan["commands"].pop(0)
             command["action"] = "execute_command"
+            print(command)
             try: self.send_command(json.dumps(command))
             except DroneNotArmedException:
                 controller.logger.warn("Drone not armed yet!")
@@ -191,23 +201,29 @@ class Controller(threading.Thread):
                     }
                     try: self.send_command(json.dumps(arm_command))
                     except CommandNotExectuedException: self.logger.error("Arm command not executed!")
-            self.logger.info("Drone armed. Resuming flight path.")
-            try: self.send_command(json.dumps(command))
-            except DroneNotArmedException: self.logger.error("Command not executed!")
+                self.logger.info("Drone armed. Resuming flight path.")
+                try: self.send_command(json.dumps(command))
+                except DroneNotArmedException: self.logger.error("Command not executed!")
 
     def execute_job(self,job):
-        if job["action"] == "no_plan_job":
-            # no plan attached to the job, so create one here
-            if self.current_marker_id != job["point1"]:
-                # first go to point1
-                plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
-                self.executing_flight_plan = True
-                self.execute_flight_plan(plan)
-                self.executing_flight_plan = False
-            plan = self.flight_planner.find_path(job["point1"], job["point2"])
-            self.executing_flight_plan = True
-            self.execute_flight_plan(plan)
-            self.executing_flight_plan = False
+        try:
+            if job["action"] == "no_plan_job":
+                # no plan attached to the job, so create one here
+                if self.current_marker_id != job["point2"]:
+                    if self.current_marker_id != job["point1"]:
+                        # first go to point1
+                        plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
+                        self.executing_flight_plan = True
+                        self.execute_flight_plan(plan)
+                        self.executing_flight_plan = False
+                        self.current_marker_id = job["point1"]
+                    plan = self.flight_planner.find_path(job["point1"], job["point2"])
+                    self.executing_flight_plan = True
+                    self.execute_flight_plan(plan)
+                    self.executing_flight_plan = False
+                    self.current_marker_id = job["point2"]
+        except KeyError:
+            self.logger.warn("Job failed, not engough information.")
 
     def run(self):
         try:
@@ -215,7 +231,9 @@ class Controller(threading.Thread):
             while self.running:
                 if len(self.jobs) is not 0:
                     # get the first job
+
                     job = self.jobs.pop(0)
+                    self.execute_job(job)
                 time.sleep(0.1)
         except Exception:
             exit(0, 0)
