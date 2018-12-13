@@ -20,11 +20,18 @@ class DroneStatusEnum(enum.Enum):
 
 
 class Drone:
+    """
+    Simulated drone class, simulates the drone actions
+    :ivar x, y, z: position of the drone, updated after each command (see moveDistance function)
+    :ivar pitch, yaw, roll: rotations of the drone
+    :ivar flying, bool: True means the drone flying
+    :ivar status, drone status enum (see DroneStatusEnum class for possible statusses)
+    :ivar black_box: 'black box' of the aircraft, logs every action of the drone
+    """
     x, y, z = 0, 0, 0
     pitch, yaw, roll = 0, 0, 0
     flying = False
     status = DroneStatusEnum.Idle       # or init? no real initialization in simulation
-    id = 1
     black_box = BlackBox.create_black_box()
 
     def is_armed(self):
@@ -158,14 +165,29 @@ class Drone:
         time.sleep(flight_time)
 
     def center(self,x,y):     # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
-        # TODO: check if marker is found (fov)
-        dx = float(x - self.x)
-        dy = float(y - self.y)
-        self.black_box.info("Centering drone to x: %.2f y: %0.2f" % (x,y))
-        self.moveDistance(dx,dy,0,velocity=0.5,deviation_mean=0,deviation_sigma=0) # move to the position with 0 randomness
-        self.yaw = 0
+        fov = 60
+        view_distance = 2 * self.z * math.tan(fov / 2)
+        if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance /2:
+            dx = float(x - self.x)
+            dy = float(y - self.y)
+            self.black_box.info("Centering drone to x: %.2f y: %0.2f" % (x,y))
+            self.moveDistance(dx,dy,0,velocity=0.5,deviation_mean=0,deviation_sigma=0) # move to the position with 0 randomness
+            self.yaw = 0
+        else:
+            self.black_box.info("Centering failed, no marker found.")
 
     def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5, deviation_mean=0, deviation_sigma=0.1):
+        """
+        Move distance specified by the distance x,y,z parameters [m], the deviation_mean and deviation_simgma control
+        the randomness of the movement
+        :param distance_x_m: distance to move on x axis in m
+        :param distance_y_m: distance to move on y axis in m
+        :param distance_z_m: distance to move on z axis in m
+        :param velocity: velocity to move with in m/s
+        :param deviation_mean: control the randomness of the movement
+        :param deviation_sigma: control the randomness of the movement
+        :return:
+        """
         distance_x_m += np.random.normal(deviation_mean,deviation_sigma)
         distance_y_m += np.random.normal(deviation_mean,deviation_sigma)
 
