@@ -2,7 +2,7 @@ import sys
 sys.path.append(sys.path[0]+"/..")          # FIXME: working directory not always the parent directory of DroneCore. ==> modules not found
 
 import errno
-import socket, time, json, signal
+import socket, time, json, signal, enum
 from json import JSONDecodeError
 import DroneCore.CoreLogger as clogger
 import Common.FlightPlanner as fp
@@ -10,7 +10,18 @@ import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
 from DroneCore.SharedSocket import SharedSocket
-from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException
+
+
+class DroneStatusEnum(enum.Enum):
+    Init=0
+    Idle=1
+    Armed=2
+    Flying=3
+    EmergencyLowBattery=4
+    EmergencyGamepadLoss=5
+    EmergencyGamepadLand=6
+    EmergencyGamepadStop=7
 
 
 class Poller(threading.Thread):
@@ -49,6 +60,7 @@ class Controller(threading.Thread):
     current_marker_id = 0
     flight_planner = fp.FlightPlanner()
     jobs = [] # job list
+    drone_status = ""
 
     def __init__(self,ip,port):
         super().__init__()
@@ -81,6 +93,7 @@ class Controller(threading.Thread):
                 self.mqtt.loop_start()
                 self.backend_topic = data["mqtt_topic"] + "/backend"
 
+                self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
                 self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
 
                 self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
@@ -135,6 +148,8 @@ class Controller(threading.Thread):
             raise CommandNotExectuedException()         # Command failed
         if data == b'STATE_ERROR':
             raise StateException()                      # Command failed
+        if data == b'ABORT':
+            raise AbortException()                     # Command failed
         # Command executed successfully
 
     def public_mqtt_callback(self, mosq, obj, msg):
@@ -171,57 +186,84 @@ class Controller(threading.Thread):
             self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
         except JSONDecodeError: self.logger.error("Position result was not in the correct format (no JSON).")
 
-    def send_status_update(self):
+    def get_drone_status(self):
         message = {"action": "send_status"}
-        data = self.s_execution.send_and_receive(json.dumps(message).encode())
         try:
-            data = json.loads(data.decode())
-            res = {
-                "id": self.id,
-                "action": "status_update",
-                "status": data["status"]
-            }
-            self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
-        except JSONDecodeError:
-            self.logger.error("Position result was not in the correct format (no JSON).")
+            data = json.loads(self.s_execution.send_and_receive(json.dumps(message).encode()).decode())
+            return data["status"]
+        except: self.logger.warn("Status update failed.")
+
+    def send_status_update(self):
+        status = self.get_drone_status()
+        res = {
+            "id": self.id,
+            "action": "status_update",
+            "status": status
+        }
+        self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
 
     def execute_flight_plan(self,plan):
         while len(plan["commands"]) != 0 and self.executing_flight_plan:
             command = plan["commands"].pop(0)
             command["action"] = "execute_command"
-            print(command)
-            try: self.send_command(json.dumps(command))
-            except DroneNotArmedException:
-                controller.logger.warn("Drone not armed yet!")
-                arm_input = input("Type 'arm' to arm the drone: ")
-                if arm_input.lower() == "arm":
-                    arm_command = {
-                        "action": "execute_command",
-                        "command": "arm"
-                    }
-                    try: self.send_command(json.dumps(arm_command))
-                    except CommandNotExectuedException: self.logger.error("Arm command not executed!")
-                self.logger.info("Drone armed. Resuming flight path.")
-                try: self.send_command(json.dumps(command))
-                except DroneNotArmedException: self.logger.error("Command not executed!")
+
+            counter = 0
+            executed = False
+
+            while not executed and counter < 10:
+                try:
+                    self.send_command(json.dumps(command))
+                    executed = True
+                except Exception as e:
+                    if type(e) == DroneNotArmedException:
+                        self.logger.warn("Drone not armed yet!")
+                        counter += 1
+                        time.sleep(2)
+                    if type(e) == AbortException:
+                        self.logger.error("Drone aborted command. Stopping executing job.")
+                        self.executing_flight_plan = False
+                        raise AbortException()
+
+            if not executed: raise AbortException()
+        self.executing_flight_plan = False
 
     def execute_job(self,job):
         try:
-            if job["action"] == "no_plan_job":
-                # no plan attached to the job, so create one here
-                if self.current_marker_id != job["point2"]:
-                    if self.current_marker_id != job["point1"]:
-                        # first go to point1
-                        plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
-                        self.executing_flight_plan = True
-                        self.execute_flight_plan(plan)
-                        self.executing_flight_plan = False
-                        self.current_marker_id = job["point1"]
-                    plan = self.flight_planner.find_path(job["point1"], job["point2"])
-                    self.executing_flight_plan = True
-                    self.execute_flight_plan(plan)
-                    self.executing_flight_plan = False
-                    self.current_marker_id = job["point2"]
+            status = DroneStatusEnum(self.get_drone_status())
+            if status == DroneStatusEnum.Flying.value or status == DroneStatusEnum.Armed or status == DroneStatusEnum.Idle:
+                if job["action"] == "no_plan_job":
+                    self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
+                    if self.current_marker_id != job["point2"]:
+                        try:
+                            if self.current_marker_id != job["point1"]:
+                                # first go to point1
+                                self.logger.info("Not on point1, flying to point1")
+                                plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
+                                string = ""
+                                for command in plan["commands"]:
+                                    string += "%s" % str(command) + "\n"
+                                self.logger.info("Flight plan:\n %s" % string)
+                                self.executing_flight_plan = True
+                                self.execute_flight_plan(plan)
+                                self.current_marker_id = job["point1"]
+
+                            self.logger.info("Flying to point2.")
+                            plan = self.flight_planner.find_path(job["point1"], job["point2"])
+                            string = ""
+                            for command in plan["commands"]:
+                                string += "%s" % str(command) + "\n"
+                            self.logger.info("Flight plan:\n %s" % string)
+                            self.executing_flight_plan = True
+                            self.execute_flight_plan(plan)
+                            self.current_marker_id = job["point2"]
+                        except:
+                            self.logger.error("Job execution aborted.")
+                            self.jobs.append(job)
+                    else:
+                        self.logger.info("Already at point2.")
+                else:
+                    self.logger.info("Drone not able to perform job at this time (status).")
+                    self.jobs.append(job)
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
 
@@ -231,7 +273,6 @@ class Controller(threading.Thread):
             while self.running:
                 if len(self.jobs) is not 0:
                     # get the first job
-
                     job = self.jobs.pop(0)
                     self.execute_job(job)
                 time.sleep(0.1)
