@@ -136,7 +136,7 @@ class DroneConnector(asyncore.dispatcher):
 
             if self.drone.DroneStatus == drone.DroneStatusEnum.Idle:
                 if command["command"] == "arm":
-                    self.drone.Arm()
+                    #self.drone.Arm()
                     conn.send(b'ACK')
                     return
 

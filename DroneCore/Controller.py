@@ -307,7 +307,7 @@ def exit(signal, frame):
 
 if __name__ == '__main__':
     signal.signal(signal.SIGINT, exit)
-    controller = Controller("localhost", int(sys.argv[1]))
+    controller = Controller(sys.argv[3], int(sys.argv[1]))
     controller.current_marker_id = int(sys.argv[2])
     if not controller.start_controller():
         exit(0,0)
