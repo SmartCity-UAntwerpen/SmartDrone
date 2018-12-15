@@ -6,6 +6,7 @@ import sys
 import os
 import signal
 import enum
+sys.path.append(sys.path[0]+"/..")
 
 import cflib.crtp
 import threading
