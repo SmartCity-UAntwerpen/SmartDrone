@@ -4,10 +4,10 @@ import sys, time
 
 sys.path.append(sys.path[0] + "/..")
 
-import dronefw.drone as drone
+import drone as drone
 import socket, signal, json, asyncore, threading
 import Common.Marker as Marker
-import dronefw.logger as logger
+import logger as logger
 from Common.DBConnection import DBConnection
 
 

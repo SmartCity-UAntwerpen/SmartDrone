@@ -1,5 +1,5 @@
 
-import time, argparse
+import time, argparse, sys
 from subprocess import Popen
 
 if __name__ == "__main__":
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         communicating_process.terminate()
     else:
         # start a normal drone
-        executing_process = Popen(["python3", "dronefw/remote.py", str(port)])
+        executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
         communicating_process = Popen(["python3", "DroneCore/Controller.py", str(port), str(marker)])
 
         running = True

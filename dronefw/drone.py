@@ -6,19 +6,18 @@ import sys
 import os
 import signal
 import enum
-sys.path.append(sys.path[0]+"/..")
 
 import cflib.crtp
 import threading
 import settings
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from dronefw.motion_commander import MotionCommander
+from motion_commander import MotionCommander
 from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.crazyflie.log import LogConfig
 from threading import Thread
-from dronefw.gamepad import *
-from dronefw.aruconav import *
+from gamepad import *
+from aruconav import *
 
 
 class DroneStatusEnum(enum.Enum):
