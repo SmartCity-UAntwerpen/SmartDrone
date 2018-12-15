@@ -5,7 +5,6 @@ sys.path.append(sys.path[0] + "/..")
 import DroneSim.Drone as Drone
 import socket, signal, json, asyncore, threading, time
 import Common.Marker as Marker
-from json import JSONDecodeError
 
 from Common.DBConnection import DBConnection
 
@@ -76,7 +75,7 @@ class DroneSimulator(asyncore.dispatcher):
                     self.send_drone_position(sock)
                 elif data["action"] == "send_status":
                     self.send_drone_status(sock)
-            except JSONDecodeError:
+            except ValueError:
                 self.drone.black_box.error("Received non json message, dropping message.")
 
     def send_drone_position(self, connection):
@@ -229,7 +228,7 @@ class DroneSimulator(asyncore.dispatcher):
             conn.send(b'STATE_ERROR')
             return
         except Exception as e:
-            if type(e) == JSONDecodeError:
+            if type(e) == ValueError:
                 self.drone.black_box.error("Received wrong command message (no JSON).")
             else:
                 self.drone.black_box.error("Command aborted.")

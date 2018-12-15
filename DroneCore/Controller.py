@@ -3,7 +3,6 @@ sys.path.append(sys.path[0]+"/..")          # FIXME: working directory not alway
 
 import errno
 import socket, time, json, signal, enum
-from json import JSONDecodeError
 import DroneCore.CoreLogger as clogger
 import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
@@ -170,7 +169,7 @@ class Controller(threading.Thread):
                 except KeyError:
                     self.logger.warn("Recieved incomplete job data.")
 
-        except JSONDecodeError:
+        except ValueError:
             self.logger.warn("Received new mqtt message on unique topic, message is not in JSON format.")
 
     def send_position_update(self):
@@ -184,7 +183,7 @@ class Controller(threading.Thread):
                 "position": data["position"]
             }
             self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
-        except JSONDecodeError: self.logger.error("Position result was not in the correct format (no JSON).")
+        except ValueError: self.logger.error("Position result was not in the correct format (no JSON).")
 
     def get_drone_status(self):
         message = {"action": "send_status"}
