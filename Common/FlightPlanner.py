@@ -1,6 +1,5 @@
 import math
 import networkx as nx
-import matplotlib.pyplot as plt
 from networkx import NetworkXNoPath
 from Common.Marker import Marker
 
@@ -30,7 +29,7 @@ class FlightPlanner:
         self.G = self.makeGraph()
 
 
-    def makeGraph(self, verbose=False):
+    def makeGraph(self):
         """
         make a graph and fill the nodes with all the markers
         for every marker check al the other markers, if the distance is smaller then a maxFlightTime
@@ -49,14 +48,6 @@ class FlightPlanner:
                     d = distance(currentMarker, index)
                     if d <= self.maxFlightDistance:
                         G.add_edge(currentMarker, index, weight=d)
-
-        # for debug purpuses you can print de graph
-        if verbose:
-            pos = nx.spring_layout(G)
-            nx.draw(G, with_labels=True)
-            plt.savefig("graph.png")
-            plt.show()
-
         return G
 
     def find_path(self, id_marker1, id_marker2):
