@@ -1,7 +1,6 @@
 import paho.mqtt.client as paho
 import json, socket, asyncore
 import DroneBackend.BackendLogger as BackendLogger
-from json import JSONDecodeError
 from flask import Flask
 import sys, multiprocessing, signal
 
@@ -66,7 +65,7 @@ class Backend(asyncore.dispatcher):
             self.ids[data["unique"]] = new_drone_id
             self.drones[new_drone_id] = (0, 0, 0)
             self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, data["unique"]))
-        except JSONDecodeError:
+        except ValueError:
             self.logger.error("Received message (TCP) not json decodable.")
 
     def mqtt_callback(self, mosq, obj, msg):

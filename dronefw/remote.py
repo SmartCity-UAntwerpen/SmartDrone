@@ -7,7 +7,6 @@ sys.path.append(sys.path[0] + "/..")
 import dronefw.drone as drone
 import socket, signal, json, asyncore, threading
 import Common.Marker as Marker
-from json import JSONDecodeError
 import dronefw.logger as logger
 from Common.DBConnection import DBConnection
 
@@ -89,7 +88,7 @@ class DroneConnector(asyncore.dispatcher):
                     self.send_drone_position(sock)
                 elif data["action"] == "send_status":
                     self.send_drone_status(sock)
-            except JSONDecodeError:
+            except ValueError:
                 self.logger.error("Received non json message, dropping message.")
 
     def send_drone_position(self, connection):
@@ -136,7 +135,7 @@ class DroneConnector(asyncore.dispatcher):
 
             if self.drone.DroneStatus == drone.DroneStatusEnum.Idle:
                 if command["command"] == "arm":
-                    self.drone.Arm()
+                    #self.drone.Arm()
                     conn.send(b'ACK')
                     return
 
@@ -233,7 +232,7 @@ class DroneConnector(asyncore.dispatcher):
             conn.send(b'STATE_ERROR')
             return
         except Exception as e:
-            if type(e) == JSONDecodeError:
+            if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
             else:
                 self.logger.error("Command aborted.")
