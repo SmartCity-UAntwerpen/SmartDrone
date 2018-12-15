@@ -7,18 +7,17 @@ import os
 import signal
 import enum
 
-
 import cflib.crtp
 import threading
 import settings
 from cflib.crazyflie import Crazyflie
 from cflib.crazyflie.syncCrazyflie import SyncCrazyflie
-from motion_commander import MotionCommander
+from dronefw.motion_commander import MotionCommander
 from cflib.crazyflie.syncLogger import SyncLogger
 from cflib.crazyflie.log import LogConfig
 from threading import Thread
-from gamepad import *
-from aruconav import *
+from dronefw.gamepad import *
+from dronefw.aruconav import *
 
 
 class DroneStatusEnum(enum.Enum):
