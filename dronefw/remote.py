@@ -20,11 +20,14 @@ class ArmThread(threading.Thread):
         self.drone_connection = drone_connection
 
     def run(self):
-        if self.drone_connection is not None:
-            while self.drone_connection.running:
-                if self.drone_connection.drone.Gamepad.Start == 1:
-                    self.drone_connection.drone.Arm()
-                time.sleep(0.01)
+        while self.drone_connection.running and self.drone_connection is not None:
+            if self.drone_connection.drone.Gamepad.Start == 1:
+                self.drone_connection.drone.Arm()
+            time.sleep(0.01)
+
+    def join(self, timeout=0):
+        print("test")
+        super().join(timeout)
 
 
 class DroneConnector(asyncore.dispatcher):
