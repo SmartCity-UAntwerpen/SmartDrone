@@ -72,7 +72,7 @@ class Controller(threading.Thread):
         counter = 0
         while not connected and counter < 10:
             try:
-                self.s_backend.connect(("127.0.0.1", 5001))
+                self.s_backend.connect((self.ip, 5001))
                 connected = True
 
                 # send unique message to get id from the backend
@@ -112,7 +112,7 @@ class Controller(threading.Thread):
         counter = 0
         while not connected and counter < 10:
             try:
-                self.s_execution.connect(self.ip, self.port)
+                self.s_execution.connect("127.0.0.1", self.port)
                 connected = True
                 self.logger.info("Connection with exectution process established.")
             except socket.error as error:
@@ -148,7 +148,7 @@ class Controller(threading.Thread):
         if data == b'STATE_ERROR':
             raise StateException()                      # Command failed
         if data == b'ABORT':
-            raise AbortException()                     # Command failed
+            raise AbortException()                      # Command failed
         # Command executed successfully
 
     def public_mqtt_callback(self, mosq, obj, msg):

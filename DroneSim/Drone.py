@@ -221,8 +221,8 @@ class Drone:
         time.sleep(flight_time)
 
     def printInfo(self):
-        print("Drone[%d]: \nPos: (%.2f, %.2f, %.2f) \nAngles: \n\t- pitch: %.2f \n\t- yaw: %.2f \n\t- roll: %.2f"
-              % (self.id, self.x, self.y, self.z,self.pitch,self.yaw,self.roll))
+        print("Drone: \nPos: (%.2f, %.2f, %.2f) \nAngles: \n\t- pitch: %.2f \n\t- yaw: %.2f \n\t- roll: %.2f"
+              % (self.x, self.y, self.z,self.pitch,self.yaw,self.roll))
 
     def check_before_flight(self, distance, velocity):
         if distance < 0 or velocity < 0:

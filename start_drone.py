@@ -1,10 +1,10 @@
 
-import time, argparse
+import time, argparse, sys
 from subprocess import Popen
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-s" ,"--sim", help="Start a simulated drone.", action="store_true")
+    parser.add_argument("-s", "--sim", help="Start a simulated drone.", action="store_true")
     parser.add_argument("-p", "--port", help="Define port for drone executing process.")
     parser.add_argument("-m", "--marker", help="Define the start position of the drone, by marker id.")
     parser.add_argument("-b", "--backend", help="Set IP address of the backend to connect to.")
@@ -37,8 +37,8 @@ if __name__ == "__main__":
         communicating_process.terminate()
     else:
         # start a normal drone
-        executing_process = Popen(["python3", "dronefw/remote.py", str(port)])
-        communicating_process = Popen(["python3", "DroneCore/Controller.py", str(port), str(marker)])
+        executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
+        communicating_process = Popen(["python3", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
 
         running = True
         try:
