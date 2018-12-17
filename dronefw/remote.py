@@ -244,17 +244,20 @@ class DroneConnector(asyncore.dispatcher):
                 self.logger.error("Command aborted.")
                 conn.send(b'ABORT')
 
-    def __del__(self):
+    def close(self):
         self.close()
         self.running = False
+        print("Test1")
         self.arm_thread.join()
 
 def exit(signal, frame):
     print("Closing drone...")
     global drone_connection
-    del drone_connection
+    drone_connection.close()
     print("Drone tured off.")
-    sys.exit(0)
+    try:
+        sys.exit(0)
+    except Exception as e: print(e)
 
 
 if __name__ == "__main__":
