@@ -1,6 +1,7 @@
 
 import time, argparse, sys
 from subprocess import Popen
+from signal import SIGINT
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -14,7 +15,6 @@ if __name__ == "__main__":
     port = 5000 if not args.port else args.port
     marker = 1 if not args.marker else args.marker
     ip = "localhost" if not args.backend else args.backend
-
     if args.sim:
         # start a simulated drone
         executing_process = Popen(["python3", "DroneSim/DroneSimulator.py", str(port)])
@@ -33,8 +33,10 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             running = False
 
-        executing_process.terminate()
-        communicating_process.terminate()
+        if executing_process.poll() is not None:
+            executing_process.send_signal(SIGINT)
+        if communicating_process.poll() is not None:
+            communicating_process.send_signal(SIGINT)
     else:
         # start a normal drone
         executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
@@ -53,5 +55,7 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             running = False
 
-        executing_process.terminate()
-        communicating_process.terminate()
+        if executing_process.poll() is not None:
+            executing_process.send_signal(SIGINT)
+        if communicating_process.poll() is not None:
+            communicating_process.send_signal(SIGINT)
