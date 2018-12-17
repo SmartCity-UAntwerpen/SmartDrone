@@ -248,7 +248,7 @@ class DroneConnector(asyncore.dispatcher):
 
 def exit(signal, frame):
     print("Closing drone...")
-    drone_connection.drone.Close()
+    del drone_connection
     print("Drone tured off.")
     sys.exit(0)
 
