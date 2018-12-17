@@ -308,3 +308,6 @@ if __name__ == '__main__':
         exit(0,0)
 
     controller.start()
+
+    while controller.running:
+        time.sleep(0.1)
