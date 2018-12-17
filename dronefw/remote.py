@@ -12,8 +12,8 @@ from Common.DBConnection import DBConnection
 
 
 def exit(signal, frame):
-    print("Closing socket...")
-    # emergency land drone?
+    print("Closing drone...")
+    drone_connection.drone.Close()
     print("Drone tured off.")
     sys.exit(0)
 
