@@ -224,14 +224,15 @@ class DroneConnector(asyncore.dispatcher):
 
                 elif command["command"] == "center":
                     marker = self.drone.ArucoNav.Center()
-                    if self.drone.ArucoNav.Center() is None:
+                    if marker is None:
+                        self.drone.mc.land()
+                        conn.send(b'ABORT')
+                    else:
                         marker = self.markers[marker.id]
                         self.px = marker.x
                         self.py = marker.y
                         self.pz = marker.z
-                        self.drone.mc.land()
-                        conn.send(b'ABORT')
-                    else: conn.send(b'ACK')
+                        conn.send(b'ACK')
                     return
 
                 conn.send(b'ERROR')
