@@ -15,6 +15,7 @@ if __name__ == "__main__":
     port = 5000 if not args.port else args.port
     marker = 1 if not args.marker else args.marker
     ip = "localhost" if not args.backend else args.backend
+
     if args.sim:
         # start a simulated drone
         executing_process = Popen(["python3", "DroneSim/DroneSimulator.py", str(port)])

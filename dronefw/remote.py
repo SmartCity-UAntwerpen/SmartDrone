@@ -4,18 +4,11 @@ import sys, time
 
 sys.path.append(sys.path[0] + "/..")
 
-import drone as drone
+import drone as Drone
 import socket, signal, json, asyncore, threading
 import Common.Marker as Marker
-import logger as logger
+import logger as dlogger
 from Common.DBConnection import DBConnection
-
-
-def exit(signal, frame):
-    print("Closing drone...")
-    drone_connection.drone.Close()
-    print("Drone tured off.")
-    sys.exit(0)
 
 
 class ArmThread(threading.Thread):
@@ -36,8 +29,8 @@ class ArmThread(threading.Thread):
 
 class DroneConnector(asyncore.dispatcher):
 
-    drone = drone.DroneClass()
-    logger = logger.create_logger()
+    drone = Drone.DroneClass()
+    logger = dlogger.create_logger()
     px = 0
     py = 0
     pz = 0
@@ -253,6 +246,13 @@ class DroneConnector(asyncore.dispatcher):
         self.arm_thread.join()
 
 
+def exit(signal, frame):
+    print("Closing drone...")
+    drone_connection.drone.Close()
+    print("Drone tured off.")
+    sys.exit(0)
+
+
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
 
@@ -262,3 +262,5 @@ if __name__ == "__main__":
         asyncore.loop()
     else:
         print("Error starting drone.")
+
+

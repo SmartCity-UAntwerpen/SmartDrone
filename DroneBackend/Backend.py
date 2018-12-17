@@ -103,15 +103,6 @@ class Backend(asyncore.dispatcher):
         self.close()
 
 
-def exit(signal, frame):
-    print("Terminating Backend...")
-    global api
-    api.join()
-    global backend
-    del backend
-    sys.exit(0)
-
-
 @app.route('/link/transitmap')
 def transitmap_api():
     data = json.loads(open('carlinks.json').read())
@@ -124,8 +115,10 @@ def flagtransitmap_api():
 
 
 def start_backend():
-    signal.signal(signal.SIGINT, exit)
+    signal.signal(signal.SIGINT, stop)
+    global backend
     backend = Backend("0.0.0.0", 5001, base_topic)
+    global api
     api = RestApi()
     api.start()
     asyncore.loop()
@@ -133,3 +126,12 @@ def start_backend():
     # TODO: add nodes from database
     # TODO: make use of flightplanner
     # TODO: accept a job from the maas
+
+def stop(signal, frame):
+    print("Terminating Backend...")
+    global api
+    api.join()
+    global backend
+    del backend
+    sys.exit(0)
+
