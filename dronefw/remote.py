@@ -248,13 +248,14 @@ class DroneConnector(asyncore.dispatcher):
 
 def exit(signal, frame):
     print("Closing drone...")
+    global drone_connection
     del drone_connection
     print("Drone tured off.")
     sys.exit(0)
 
 
 if __name__ == "__main__":
-    #signal.signal(signal.SIGINT, exit)
+    signal.signal(signal.SIGINT, exit)
 
     drone_connection = DroneConnector("127.0.0.1", int(sys.argv[1]))
 
