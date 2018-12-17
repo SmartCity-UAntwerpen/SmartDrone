@@ -72,11 +72,12 @@ class DroneConnector(asyncore.dispatcher):
         if pair is None: return
         sock, addr = pair
 
-        while self.running:
+        connected = True
+        while connected:
             data = sock.recv(2048)  # receive data with buffer of size 2048
             try:
                 data = data.decode()
-                if not data: continue
+                if not data: connected = False
                 data = json.loads(data)
                 if data["action"] == "execute_command":
                     self.perform_action(data, sock)
@@ -244,7 +245,6 @@ class DroneConnector(asyncore.dispatcher):
         self.close()
         self.running = False
         self.arm_thread.join()
-
 
 def exit(signal, frame):
     print("Closing drone...")

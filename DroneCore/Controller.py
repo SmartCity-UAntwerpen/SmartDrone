@@ -278,19 +278,13 @@ class Controller(threading.Thread):
         except Exception:
             exit(0, 0)
 
-    def join(self, timeout=0):
+    def close(self):
         self.running = False
-
-    def __del__(self):
         if self.mqtt:
             self.mqtt.disconnect()
             self.mqtt.loop_stop()
         self.s_backend.close()
-        if self.s_execution.isAlive():
-            self.send_position_update()
-            self.send_status_update()
-            self.s_execution.close()
-            self.s_execution.join()
+        self.s_execution.close()
         if self.poller:
             if self.poller.isAlive():
                 self.poller.join()
@@ -299,9 +293,11 @@ class Controller(threading.Thread):
 def exit(signal, frame):
     print("Controller closed.")
     global controller
+    controller.close()
     controller.join()
-    del controller
-    sys.exit(0)
+    try:
+        sys.exit(0)
+    except: pass
 
 
 if __name__ == '__main__':
@@ -311,4 +307,4 @@ if __name__ == '__main__':
     if not controller.start_controller():
         exit(0,0)
 
-    controller.run()
+    controller.start()

@@ -20,16 +20,11 @@ class ArmThread(threading.Thread):
     def run(self):
         if self.drone_connection is not None:
             while self.drone_connection.running:
-                if input("").lower() == "arm":
-                    self.drone_connection.drone.arm()
+                try:
+                    if input("").lower() == "arm":
+                        self.drone_connection.drone.arm()
+                except: pass
                 time.sleep(0.01)
-
-
-def exit(signal, frame):
-    print("Closing socket...")
-    # emergency land drone?
-    print("Simulator tured off.")
-    sys.exit(0)
 
 
 class DroneSimulator(asyncore.dispatcher):
@@ -63,11 +58,12 @@ class DroneSimulator(asyncore.dispatcher):
         if pair is None: return
         sock, addr = pair
 
-        while self.running:
+        connected = True
+        while connected:
             data = sock.recv(2048)  # receive data with buffer of size 2048
             try:
                 data = data.decode()
-                if not data: continue
+                if not data: connected = False
                 data = json.loads(data)
                 if data["action"] == "execute_command":
                     self.perform_action(data, sock)
@@ -238,8 +234,15 @@ class DroneSimulator(asyncore.dispatcher):
         self.running = False
         self.arm_thread.join()
 
+def exit(signal, frame):
+    print("Closing drone...")
+    global sim
+    del sim
+    print("Simulator tured off.")
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
-    backend = DroneSimulator("127.0.0.1", int(sys.argv[1]))
+    sim = DroneSimulator("127.0.0.1", int(sys.argv[1]))
     asyncore.loop()

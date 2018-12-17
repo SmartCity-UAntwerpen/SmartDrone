@@ -2,7 +2,7 @@
 import threading, socket
 
 
-class SharedSocket(threading.Thread):
+class SharedSocket():
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     queues = {}
@@ -21,3 +21,4 @@ class SharedSocket(threading.Thread):
 
     def close(self):
         self.s.close()
+        print("Closed")
