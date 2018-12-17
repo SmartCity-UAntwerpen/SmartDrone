@@ -245,7 +245,6 @@ class DroneConnector(asyncore.dispatcher):
                 conn.send(b'ABORT')
 
     def close(self):
-        self.close()
         self.running = False
         print("Test1")
         self.arm_thread.join()
