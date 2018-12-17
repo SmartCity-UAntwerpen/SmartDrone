@@ -38,6 +38,9 @@ class DroneConnector(asyncore.dispatcher):
 
     drone = drone.DroneClass()
     logger = logger.create_logger()
+    px = 0
+    py = 0
+    pz = 0
 
     def __init__(self, ip, port):
         LastStatusTime = 0
@@ -93,7 +96,7 @@ class DroneConnector(asyncore.dispatcher):
 
     def send_drone_position(self, connection):
         res = {
-            "position": (float(self.drone.px), float(self.drone.py), float(self.drone.pz)),
+            "position": (float(self.px), float(self.py), float(self.pz)),
         }
         connection.send(json.dumps(res).encode())
 
@@ -125,9 +128,9 @@ class DroneConnector(asyncore.dispatcher):
                 if command["id"] is not None:
                     if command["id"] in self.markers.keys():
                         marker = self.markers[command["id"]]
-                        self.drone.px = marker.x
-                        self.drone.py = marker.y
-                        self.drone.pz = marker.z
+                        self.px = marker.x
+                        self.py = marker.y
+                        self.pz = marker.z
                         conn.send(b'ACK')
                         return
                 conn.send(b'ERROR')
@@ -220,7 +223,12 @@ class DroneConnector(asyncore.dispatcher):
                         return
 
                 elif command["command"] == "center":
+                    marker = self.drone.ArucoNav.Center()
                     if self.drone.ArucoNav.Center() is None:
+                        marker = self.markers[marker.id]
+                        self.px = marker.x
+                        self.py = marker.y
+                        self.pz = marker.z
                         self.drone.mc.land()
                         conn.send(b'ABORT')
                     else: conn.send(b'ACK')
