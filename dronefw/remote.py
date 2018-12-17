@@ -26,8 +26,9 @@ class ArmThread(threading.Thread):
             time.sleep(0.01)
 
     def join(self, timeout=0):
-        print("test")
+        print("test1")
         super().join(timeout)
+        print("test2")
 
 
 class DroneConnector(asyncore.dispatcher):
@@ -246,7 +247,7 @@ class DroneConnector(asyncore.dispatcher):
 
     def close(self):
         self.running = False
-        print("Test1")
+        print("test0")
         self.arm_thread.join()
 
 def exit(signal, frame):
