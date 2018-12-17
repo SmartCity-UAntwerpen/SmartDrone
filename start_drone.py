@@ -38,7 +38,7 @@ if __name__ == "__main__":
     else:
         # start a normal drone
         executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
-        communicating_process = Popen(["python3", "DroneCore/Controller.py", str(port), str(marker)])
+        communicating_process = Popen(["python3", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
 
         running = True
         try:
