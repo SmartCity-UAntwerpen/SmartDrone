@@ -254,7 +254,7 @@ def exit(signal, frame):
 
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, exit)
+    #signal.signal(signal.SIGINT, exit)
 
     drone_connection = DroneConnector("127.0.0.1", int(sys.argv[1]))
 
