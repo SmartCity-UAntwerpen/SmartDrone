@@ -229,7 +229,7 @@ class Controller(threading.Thread):
     def execute_job(self,job):
         try:
             status = DroneStatusEnum(self.get_drone_status())
-            if status == DroneStatusEnum.Flying.value or status == DroneStatusEnum.Armed or status == DroneStatusEnum.Idle:
+            if status == DroneStatusEnum.Armed:
                 if job["action"] == "no_plan_job":
                     self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
                     if self.current_marker_id != job["point2"]:
@@ -261,7 +261,7 @@ class Controller(threading.Thread):
                     else:
                         self.logger.info("Already at point2.")
                 else:
-                    self.logger.info("Drone not able to perform job at this time (status).")
+                    self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
                     self.jobs.append(job)
         except KeyError:
             self.logger.warn("Job failed, not engough information.")

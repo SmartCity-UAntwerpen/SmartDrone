@@ -34,6 +34,9 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             running = False
 
+        executing_process.terminate()           # terminate because the dronesim does not join the thread (waiting for input)
+        #communicating_process.terminate()
+
     else:
         # start a normal drone
         executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
@@ -52,7 +55,4 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             running = False
 
-        if executing_process.poll() is not None:
-            executing_process.send_signal(SIGINT)
-        if communicating_process.poll() is not None:
-            communicating_process.send_signal(SIGINT)
+

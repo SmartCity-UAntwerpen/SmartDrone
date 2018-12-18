@@ -134,7 +134,7 @@ class DroneConnector(asyncore.dispatcher):
                 conn.send(b'ERROR')
                 return
 
-            if self.drone.DroneStatus == drone.DroneStatusEnum.Idle:
+            if self.drone.DroneStatus == Drone.DroneStatusEnum.Idle:
                 if command["command"] == "arm":
                     #self.drone.Arm()
                     conn.send(b'ACK')
@@ -143,7 +143,7 @@ class DroneConnector(asyncore.dispatcher):
                 conn.send(b'NOT_ARMED')
                 return
 
-            if self.drone.DroneStatus == drone.DroneStatusEnum.Armed:
+            if self.drone.DroneStatus == Drone.DroneStatusEnum.Armed:
                 if command["command"] == "takeoff":
                     if self.check_values(command, "height", "velocity"):
                         self.drone.mc.TakeOff(command["height"], command["velocity"])
@@ -153,7 +153,7 @@ class DroneConnector(asyncore.dispatcher):
                 conn.send(b'ERROR')
                 return
 
-            if self.drone.DroneStatus == drone.DroneStatusEnum.Flying:
+            if self.drone.DroneStatus == Drone.DroneStatusEnum.Flying:
                 if command["command"] == "land":
                     self.drone.mc.land()
                     conn.send(b'ACK')
