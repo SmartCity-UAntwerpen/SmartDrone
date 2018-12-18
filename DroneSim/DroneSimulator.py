@@ -9,24 +9,6 @@ import Common.Marker as Marker
 from Common.DBConnection import DBConnection
 
 
-class ArmThread(threading.Thread):
-
-    drone_connection = None
-
-    def __init__(self, drone_connection):
-        super().__init__()
-        self.drone_connection = drone_connection
-
-    def run(self):
-        if self.drone_connection is not None:
-            while self.drone_connection.running:
-                try:
-                    if input("").lower() == "arm":
-                        self.drone_connection.drone.arm()
-                except: pass
-                time.sleep(0.01)
-
-
 class DroneSimulator(asyncore.dispatcher):
     drone = Drone.Drone()
 
@@ -39,8 +21,6 @@ class DroneSimulator(asyncore.dispatcher):
         self.running = True
         self.drone.black_box.info("Drone simulator started.")
         self.markers = self.get_markers()
-        self.arm_thread = ArmThread(self)
-        self.arm_thread.start()
 
     def get_markers(self):
         db = DBConnection()
@@ -122,6 +102,10 @@ class DroneSimulator(asyncore.dispatcher):
                     return
 
                 conn.send(b'NOT_ARMED')
+                if self.wait_for_arm():
+                    conn.send(b'ACK')
+                else:
+                    conn.send(b'NOT ARMED')
                 return
 
             if self.drone.is_armed():
@@ -229,15 +213,22 @@ class DroneSimulator(asyncore.dispatcher):
             else:
                 self.drone.black_box.error("Command aborted.")
 
+    def wait_for_arm(self):
+        if input("").lower() == "arm":
+            self.drone.arm()
+            return True
+        return False
+
     def __del__(self):
         self.close()
         self.running = False
-        self.arm_thread.join()
+
 
 def exit(signal, frame):
     print("Closing drone...")
     global sim
     del sim
+    asyncore.close_all()
     print("Simulator tured off.")
     sys.exit(0)
 

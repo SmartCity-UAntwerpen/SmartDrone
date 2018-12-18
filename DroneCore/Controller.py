@@ -142,8 +142,10 @@ class Controller(threading.Thread):
         data = self.s_execution.send_and_receive(data.encode())
 
         if data == b'NOT_ARMED':
-            self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
+            self.logger.info("Drone not armed, waiting for arm...")
+            self.s_execution.lock.acquire()
             data = self.s_execution.s.recv(2048)
+            self.s_execution.lock.release()
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
@@ -217,10 +219,6 @@ class Controller(threading.Thread):
                     self.send_command(json.dumps(command))
                     executed = True
                 except Exception as e:
-                    if type(e) == DroneNotArmedException:
-                        self.logger.warn("Drone not armed yet!")
-                        counter += 1
-                        time.sleep(2)
                     if type(e) == AbortException:
                         self.logger.error("Drone aborted command. Stopping executing job.")
                         self.executing_flight_plan = False
@@ -230,11 +228,9 @@ class Controller(threading.Thread):
         self.executing_flight_plan = False
 
     def execute_job(self,job):
-        print("execute job")
         try:
             status = DroneStatusEnum(self.get_drone_status())
             print(status)
-            #if status == DroneStatusEnum.Armed:
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
                 if self.current_marker_id != job["point2"]:
@@ -265,9 +261,6 @@ class Controller(threading.Thread):
                         self.jobs.append(job)
                 else:
                     self.logger.info("Already at point2.")
-            #else:
-                #self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
-                #self.jobs.append(job)
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
 
