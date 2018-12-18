@@ -66,7 +66,6 @@ class DroneCommander(asyncore.dispatcher):
         self.set_reuse_addr()
         self.bind((ip, port))
         self.listen(1)  # only allow one incomming connection
-        self.drone.black_box.info("Drone simulator started.")
         self.markers = self.get_markers()
 
     def get_markers(self):
@@ -267,4 +266,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
     DroneCommander("127.0.0.1", int(sys.argv[1]))
     DroneStatus("127.0.0.1", int(sys.argv[1])+1)
+    Drone.black_box.info("Drone simulator started.")
     asyncore.loop()
