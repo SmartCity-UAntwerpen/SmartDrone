@@ -243,7 +243,6 @@ class DroneConnector(asyncore.dispatcher):
                 self.logger.error("Received wrong command message (no JSON).")
             else:
                 self.logger.error("Command aborted.")
-                print(e)
                 conn.send(b'ABORT')
 
     def close(self):

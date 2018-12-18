@@ -270,6 +270,7 @@ class Controller(threading.Thread):
         try:
             # Polling loop, sleep 1 s each time
             while self.running:
+                print(len(self.jobs))
                 if len(self.jobs) is not 0:
                     # get the first job
                     job = self.jobs.pop(0)
