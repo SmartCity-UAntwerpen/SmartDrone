@@ -8,9 +8,12 @@ import Common.Marker as Marker
 
 from Common.DBConnection import DBConnection
 
+Drone = Drone.Drone()
 
-class DroneSimulator(asyncore.dispatcher):
-    drone = Drone.Drone()
+class DroneStatus(asyncore.dispatcher):
+
+    global Drone
+    drone = Drone
 
     def __init__(self, ip, port):
         asyncore.dispatcher.__init__(self)
@@ -18,7 +21,51 @@ class DroneSimulator(asyncore.dispatcher):
         self.set_reuse_addr()
         self.bind((ip, port))
         self.listen(1)  # only allow one incomming connection
-        self.running = True
+
+    def handle_accept(self):
+        pair = self.accept()  # wait for a connection
+        if pair is None: return
+        sock, addr = pair
+
+        connected = True
+        while connected:
+            data = sock.recv(2048)  # receive data with buffer of size 2048
+            try:
+                data = data.decode()
+                if not data: connected = False
+                data = json.loads(data)
+                if data["action"] == "send_position":
+                    self.send_drone_position(sock)
+                elif data["action"] == "send_status":
+                    self.send_drone_status(sock)
+            except ValueError:
+                self.drone.black_box.error("Received non json message, dropping message.")
+
+    def send_drone_position(self, connection):
+        res = {
+            "position": (float(self.drone.x), float(self.drone.y), float(self.drone.z)),
+        }
+        connection.send(json.dumps(res).encode())
+
+    def send_drone_status(self, connection):
+        res = {"status": self.drone.status.value}
+        connection.send(json.dumps(res).encode())
+
+    def __del__(self):
+        self.close()
+
+
+class DroneCommander(asyncore.dispatcher):
+
+    global Drone
+    drone = Drone
+
+    def __init__(self, ip, port):
+        asyncore.dispatcher.__init__(self)
+        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.set_reuse_addr()
+        self.bind((ip, port))
+        self.listen(1)  # only allow one incomming connection
         self.drone.black_box.info("Drone simulator started.")
         self.markers = self.get_markers()
 
@@ -47,22 +94,8 @@ class DroneSimulator(asyncore.dispatcher):
                 data = json.loads(data)
                 if data["action"] == "execute_command":
                     self.perform_action(data, sock)
-                elif data["action"] == "send_position":
-                    self.send_drone_position(sock)
-                elif data["action"] == "send_status":
-                    self.send_drone_status(sock)
             except ValueError:
                 self.drone.black_box.error("Received non json message, dropping message.")
-
-    def send_drone_position(self, connection):
-        res = {
-            "position": (float(self.drone.x), float(self.drone.y), float(self.drone.z)),
-        }
-        connection.send(json.dumps(res).encode())
-
-    def send_drone_status(self, connection):
-        res = {"status": self.drone.status.value}
-        connection.send(json.dumps(res).encode())
 
     boundries = {
         "height": [0, 10],
@@ -221,13 +254,10 @@ class DroneSimulator(asyncore.dispatcher):
 
     def __del__(self):
         self.close()
-        self.running = False
 
 
 def exit(signal, frame):
     print("Closing drone...")
-    global sim
-    del sim
     asyncore.close_all()
     print("Simulator tured off.")
     sys.exit(0)
@@ -235,5 +265,6 @@ def exit(signal, frame):
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
-    sim = DroneSimulator("127.0.0.1", int(sys.argv[1]))
+    DroneCommander("127.0.0.1", int(sys.argv[1]))
+    DroneStatus("127.0.0.1", int(sys.argv[1])+1)
     asyncore.loop()

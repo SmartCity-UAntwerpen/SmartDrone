@@ -8,7 +8,6 @@ import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
-from DroneCore.SharedSocket import SharedSocket
 from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException
 
 
@@ -47,7 +46,8 @@ class Controller(threading.Thread):
     running = True
     executing_flight_plan = False
     s_backend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s_execution = SharedSocket()
+    s_command = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s_status = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     poller = None
     logger = clogger.logger
 
@@ -112,7 +112,8 @@ class Controller(threading.Thread):
         counter = 0
         while not connected and counter < 10:
             try:
-                self.s_execution.connect("127.0.0.1", self.port)
+                self.s_command.connect(("127.0.0.1", self.port))
+                self.s_status.connect(("127.0.0.1", self.port+1))
                 connected = True
                 self.logger.info("Connection with exectution process established.")
             except socket.error as error:
@@ -139,13 +140,12 @@ class Controller(threading.Thread):
         return True # controller successfully started
 
     def send_command(self, data):
-        data = self.s_execution.send_and_receive(data.encode())
+        self.s_command.send(data.encode())
+        data = self.s_command.recv(2048)
 
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
-            self.s_execution.lock.acquire()
-            data = self.s_execution.s.recv(2048)
-            self.s_execution.lock.release()
+            data = self.s_command.recv(2048)
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
@@ -179,7 +179,8 @@ class Controller(threading.Thread):
 
     def send_position_update(self):
         message = { "action": "send_position" }
-        data = self.s_execution.send_and_receive(json.dumps(message).encode())
+        self.s_status.send(json.dumps(message).encode())
+        data = self.s_status.recv(2048)
         try:
             data = json.loads(data.decode())
             res = {
@@ -193,7 +194,9 @@ class Controller(threading.Thread):
     def get_drone_status(self):
         message = {"action": "send_status"}
         try:
-            data = json.loads(self.s_execution.send_and_receive(json.dumps(message).encode()).decode())
+            self.s_status.send(json.dumps(message).encode())
+            data = self.s_status.recv(2048)
+            data = json.loads(data.decode())
             return data["status"]
         except: self.logger.warn("Status update failed.")
 
@@ -283,7 +286,8 @@ class Controller(threading.Thread):
             self.mqtt.disconnect()
             self.mqtt.loop_stop()
         self.s_backend.close()
-        self.s_execution.close()
+        self.s_command.close()
+        self.s_status.close()
         if self.poller:
             if self.poller.isAlive():
                 self.poller.join()
