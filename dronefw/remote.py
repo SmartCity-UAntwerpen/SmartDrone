@@ -55,8 +55,8 @@ class DroneConnector(asyncore.dispatcher):
             self.running = True
             self.logger.info("Drone process started.")
             self.markers = self.get_markers()
-            self.arm_thread = ArmThread(self)
-            self.arm_thread.start()
+            #self.arm_thread = ArmThread(self)
+            #self.arm_thread.start()
         else:
             self.running = False
 
@@ -141,6 +141,10 @@ class DroneConnector(asyncore.dispatcher):
                     return
 
                 conn.send(b'NOT_ARMED')
+                if self.wait_for_arm(10):
+                    conn.send(b'ACK')
+                else:
+                    conn.send(b'NOT ARMED')
                 return
 
             if self.drone.DroneStatus == Drone.DroneStatusEnum.Armed:
@@ -245,10 +249,23 @@ class DroneConnector(asyncore.dispatcher):
                 self.logger.error("Command aborted.")
                 conn.send(b'ABORT')
 
+    def wait_for_arm(self,timeout):
+        sleep_time = 0.1
+        counter = 0
+        while self.running and counter <= timeout:
+            if self.drone.Gamepad.Start == 1:
+                self.drone.Arm()
+                return True
+            counter += sleep_time
+            time.sleep(sleep_time)
+
+        return False
+
+
     def close(self):
         self.running = False
         print("test0")
-        self.arm_thread.join()
+        #self.arm_thread.join()
 
 def exit(signal, frame):
     print("Closing drone...")

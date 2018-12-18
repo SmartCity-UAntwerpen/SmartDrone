@@ -142,7 +142,10 @@ class Controller(threading.Thread):
         data = self.s_execution.send_and_receive(data.encode())
 
         if data == b'NOT_ARMED':
-            raise DroneNotArmedException()              # Command failed
+            self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
+            data = self.s_execution.s.recv(2048)
+            if data is not b'ACK':
+                raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
             raise CommandNotExectuedException()         # Command failed
         if data == b'STATE_ERROR':
@@ -267,6 +270,7 @@ class Controller(threading.Thread):
                 self.jobs.append(job)
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
+
 
     def run(self):
         try:
