@@ -263,7 +263,6 @@ class Controller(threading.Thread):
                     else:
                         self.logger.info("Already at point2.")
             else:
-                print("drone not armed yet")
                 self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
                 self.jobs.append(job)
         except KeyError:
