@@ -3,9 +3,9 @@ import enum, math, time
 import numpy as np
 import BlackBox
 
-MAX_VELOCITY = 2
+MAX_VELOCITY = 0.5
 VELOCITY = 0.5
-DEFAULT_HEIGHT = 0.4
+DEFAULT_HEIGHT = 0.5
 RATE = 360.0 / 5
 
 class DroneStatusEnum(enum.Enum):
@@ -176,7 +176,7 @@ class Drone:
         else:
             self.black_box.info("Centering failed, no marker found.")
 
-    def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5, deviation_mean=0, deviation_sigma=0.1):
+    def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5, deviation_mean=0, deviation_sigma=0.05):
         """
         Move distance specified by the distance x,y,z parameters [m], the deviation_mean and deviation_simgma control
         the randomness of the movement
