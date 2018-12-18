@@ -2,7 +2,7 @@ import sys
 sys.path.append(sys.path[0]+"/..")          # FIXME: working directory not always the parent directory of DroneCore. ==> modules not found
 
 import errno
-import socket, time, json, signal, enum
+import socket, time, json, signal, enum ,requests
 import DroneCore.CoreLogger as clogger
 import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
@@ -45,7 +45,6 @@ class Controller(threading.Thread):
 
     running = True
     executing_flight_plan = False
-    s_backend = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s_command = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s_status = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     poller = None
@@ -68,52 +67,33 @@ class Controller(threading.Thread):
 
     def start_controller(self):
         # subscribe to backend
-        connected = False
-        counter = 0
-        while not connected and counter < 10:
-            try:
-                self.s_backend.connect((self.ip, 5001))
-                connected = True
+        mac = get_mac()
+        url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
 
-                # send unique message to get id from the backend
-                mac = get_mac()
-                message = { "unique": mac + self.port }
-                self.s_backend.send(json.dumps(message).encode())
+        data = json.loads(requests.get(url).text)
+        self.id = data["id"]
+        self.mqtt = paho.Client()
+        self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
+        self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
+        self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
+        self.mqtt.subscribe(data["mqtt_topic"])
+        self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))
+        self.mqtt.loop_start()
+        self.backend_topic = data["mqtt_topic"] + "/backend"
 
-                data = json.loads(self.s_backend.recv(1024).decode())
-                self.id = data["id"]
+        self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
+        self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
 
-                self.mqtt = paho.Client()
-                self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
-                self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
-                self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
-                self.mqtt.subscribe(data["mqtt_topic"])
-                self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))
-                self.mqtt.loop_start()
-                self.backend_topic = data["mqtt_topic"] + "/backend"
-
-                self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
-                self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
-
-                self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
-            except socket.error as error:
-                if error.errno == errno.ECONNREFUSED:
-                    self.logger.warn("Connection to backend refused. Retrying...")
-                    counter += 1
-                    time.sleep(2)
-                else: break
-
-        if not connected:
-            self.logger.error("No connection with backend established. Shutting down.")
-            return False
+        self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
 
         # connect with exection process
         connected = False
         counter = 0
         while not connected and counter < 10:
             try:
+                self.s_status.connect(("127.0.0.1", self.port + 1))
                 self.s_command.connect(("127.0.0.1", self.port))
-                self.s_status.connect(("127.0.0.1", self.port+1))
+
                 connected = True
                 self.logger.info("Connection with exectution process established.")
             except socket.error as error:
@@ -285,7 +265,6 @@ class Controller(threading.Thread):
         if self.mqtt:
             self.mqtt.disconnect()
             self.mqtt.loop_stop()
-        self.s_backend.close()
         self.s_command.close()
         self.s_status.close()
         if self.poller:

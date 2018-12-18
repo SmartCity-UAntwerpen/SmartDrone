@@ -1,5 +1,6 @@
 import os
 import pymysql
+import Common.Marker as Marker
 
 
 class DBConnection:
@@ -46,20 +47,21 @@ class DBConnection:
             for line in open(path, 'r').readlines():
                 cursor.execute(line)
 
-    def query(self, message):
+    def query(self, sql):
         """
         Make a query to the database
-        :param message: the query
+        :param sql: the query
         :return: the answer from the database if the query was valid, "invalid query" otherwise
         """
         # run any command on the database
-        cursor = self.db.cursor()
-        # check if query is valid
+
         try:
-            cursor.execute(message)
-            return cursor
-        except pymysql.connector.errors.ProgrammingError:
-            return "invalid query"
+            with self.db.cursor() as cursor:
+                cursor.execute(sql)
+            self.db.commit()
+            return cursor.fetchall()
+        except:
+            return "Invalid Query"
 
     def add_drone(self, id, location):
         """
@@ -73,6 +75,13 @@ class DBConnection:
         z = location[2]
         query = "insert into drone(droneid, x,y,z) values(" + str(id) + "," + str(x) + "," + str(y) + "," + str(z) + ")"
         cursor.execute(query)
+
+    def get_markers(self):
+        markers = {}
+        for m in self.query("select * from point"):
+            marker = Marker.Marker(m[2], m[3], m[4], m[1])
+            markers[m[1]] = marker
+        return markers
 
 
 if __name__ == "__main__":

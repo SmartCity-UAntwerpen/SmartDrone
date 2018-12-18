@@ -18,11 +18,12 @@ class DroneStatus(asyncore.dispatcher):
     def __init__(self, ip, port):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
+        #self.set_reuse_addr()
         self.bind((ip, port))
         self.listen(1)  # only allow one incomming connection
 
     def handle_accept(self):
+        print("connected status")
         pair = self.accept()  # wait for a connection
         if pair is None: return
         sock, addr = pair
@@ -63,7 +64,7 @@ class DroneCommander(asyncore.dispatcher):
     def __init__(self, ip, port):
         asyncore.dispatcher.__init__(self)
         self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
+        #self.set_reuse_addr()
         self.bind((ip, port))
         self.listen(1)  # only allow one incomming connection
         self.markers = self.get_markers()
@@ -80,6 +81,7 @@ class DroneCommander(asyncore.dispatcher):
         return markers
 
     def handle_accept(self):
+        print("connected command")
         pair = self.accept()  # wait for a connection
         if pair is None: return
         sock, addr = pair
@@ -266,5 +268,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
     DroneCommander("127.0.0.1", int(sys.argv[1]))
     DroneStatus("127.0.0.1", int(sys.argv[1])+1)
-    Drone.black_box.info("Drone simulator started.")
     asyncore.loop()
+    Drone.black_box.info("Drone simulator started.")
+

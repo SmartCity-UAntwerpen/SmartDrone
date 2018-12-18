@@ -20,3 +20,21 @@ class Marker:
         """
         print("marker id= ", self.id, "[", self.x, ",", self.y, ",", self.z, "]")
 
+    def get_dict(self):
+        res = {
+            "x":self.x,
+            "y":self.y,
+            "z":self.z,
+            "id":self.id
+        }
+        return res
+
+    def load_dict(self, dict):
+        try:
+            self.x = dict["x"]
+            self.y = dict["y"]
+            self.z = dict["z"]
+            self.id = dict["id"]
+        except: print("Error loading dictionaty")
+
+

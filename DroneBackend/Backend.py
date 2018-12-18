@@ -1,38 +1,30 @@
 import paho.mqtt.client as paho
-import json, socket, asyncore
+import json, socket, asyncore, sys, signal
 import DroneBackend.BackendLogger as BackendLogger
-from flask import Flask
-import sys, multiprocessing, signal
+import DroneBackend.RestAPI as REST
+import Common.DBConnection as db_connection
 
-base_topic = "smartcity/drones"
+base_topic = "smartcity/drones/test"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 
-app = Flask("DroneBackend")
 
+class Backend():
 
-class RestApi():
-    api = multiprocessing.Process(target=app.run, args=("0.0.0.0", 8082))
-
-    def start(self):
-        self.api.start()
-
-    def join(self):
-        self.api.terminate()
-        self.api.join()
-
-
-class Backend(asyncore.dispatcher):
     logger = BackendLogger.logger
     mqtt = None
+    api = None
+    db = None
+    markers = []
 
     def __init__(self, ip, port, base_mqtt_topic):
         # Start tcp socket, drones connect to this socket to add themselves to the network
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.set_reuse_addr()
-        self.bind((ip, port))
-        self.listen(3)  # Allow 3 drones to be connected to the backend with tcp at the same time
+        self.ip = ip
+        self.port = port
+
+        # Connect to database
+        db = db_connection.DBConnection()
+        self.markers = db.get_markers()
 
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic
@@ -46,27 +38,35 @@ class Backend(asyncore.dispatcher):
         self.ids = {}
         self.logger.info("Backend started.")
 
-    def handle_accept(self):
-        pair = self.accept()
-        if pair is None: return
-        sock, addr = pair
+    def add_drone(self, unique_msg):
+        new_drone_id = self.ids[unique_msg] if unique_msg in self.ids.keys() else self.get_new_drone_id()
+        reply = {
+            "id": new_drone_id,
+            "mqtt_topic": self.base_mqtt_topic,
+            "mqtt_broker": mqtt_broker,
+            "mqtt_port": mqtt_port
+        }
+        self.ids[unique_msg] = new_drone_id
+        self.drones[new_drone_id] = (0, 0, 0)
+        self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, unique_msg))
+        return reply
 
-        data = sock.recv(2048).decode()
-        try:
-            data = json.loads(data)
-            new_drone_id = self.ids[data["unique"]] if data["unique"] in self.ids.keys() else len(self.ids)
-            reply = {
-                "id": new_drone_id,
-                "mqtt_topic": self.base_mqtt_topic,
-                "mqtt_broker": mqtt_broker,
-                "mqtt_port": mqtt_port
-            }
-            sock.send(json.dumps(reply).encode())
-            self.ids[data["unique"]] = new_drone_id
-            self.drones[new_drone_id] = (0, 0, 0)
-            self.logger.info("Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, data["unique"]))
-        except ValueError:
-            self.logger.error("Received message (TCP) not json decodable.")
+    def get_new_drone_id(self):
+        for i in range(len(self.ids)):
+            if i not in self.ids.values():
+                return i
+        return len(self.ids)
+
+    def remove_drone(self, drone_id):
+        drone_id = int(drone_id)
+        if drone_id in self.drones.keys():
+            del self.drones[drone_id]
+            if drone_id in self.ids.values():
+                unique = list(self.ids.keys())[list(self.ids.values()).index(drone_id)]
+                del self.ids[unique]
+                self.logger.info("Drone removed: [id] %d, [unique_msg] %s" % (drone_id, unique))
+                return {"result": "succes"}
+        return {"result": "failed"}
 
     def mqtt_callback(self, mosq, obj, msg):
         data = json.loads(msg.payload.decode())
@@ -100,39 +100,15 @@ class Backend(asyncore.dispatcher):
     def __del__(self):
         self.mqtt.disconnect()
         self.mqtt.loop_stop()
-        self.close()
-
-
-@app.route('/link/transitmap')
-def transitmap_api():
-    data = json.loads(open('carlinks.json').read())
-    return json.dumps(data)
-
-
-@app.route('/link/flagtransitmap')
-def flagtransitmap_api():
-    pass
 
 
 def start_backend():
-    signal.signal(signal.SIGINT, stop)
     global backend
-    backend = Backend("0.0.0.0", 5001, base_topic)
-    global api
-    api = RestApi()
-    api.start()
-    asyncore.loop()
+    backend = Backend("127.0.0.1", 8082, base_topic)
+    REST.RestApi(backend)
 
     # TODO: add nodes from database
     # TODO: make use of flightplanner
     # TODO: accept a job from the maas
-
-def stop(signal, frame):
-    print("Terminating Backend...")
-    global api
-    api.join()
-    global backend
-    del backend
-    sys.exit(0)
 
 
