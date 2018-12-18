@@ -271,6 +271,7 @@ def exit(signal, frame):
     print("Closing drone...")
     global drone_connection
     drone_connection.close()
+    asyncore.close_all()
     print("Drone tured off.")
     try:
         sys.exit(0)
