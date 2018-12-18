@@ -252,13 +252,16 @@ class DroneConnector(asyncore.dispatcher):
     def wait_for_arm(self,timeout):
         sleep_time = 0.1
         counter = 0
+        self.logger.error("wait for arm")
         while self.running and counter <= timeout:
             if self.drone.Gamepad.Start == 1:
                 self.drone.Arm()
+                self.logger.error("drone armed")
                 return True
             counter += sleep_time
             time.sleep(sleep_time)
 
+        self.logger.error("timeout drone not armed")
         return False
 
 
