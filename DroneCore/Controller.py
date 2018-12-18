@@ -227,8 +227,10 @@ class Controller(threading.Thread):
         self.executing_flight_plan = False
 
     def execute_job(self,job):
+        print("execute job")
         try:
             status = DroneStatusEnum(self.get_drone_status())
+            print(status)
             if status == DroneStatusEnum.Armed:
                 if job["action"] == "no_plan_job":
                     self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
@@ -261,6 +263,7 @@ class Controller(threading.Thread):
                     else:
                         self.logger.info("Already at point2.")
                 else:
+                    print("drone not armed yet")
                     self.logger.info("Drone not able to perform job at this time (status). Drone not armed or already flying")
                     self.jobs.append(job)
         except KeyError:
@@ -270,7 +273,6 @@ class Controller(threading.Thread):
         try:
             # Polling loop, sleep 1 s each time
             while self.running:
-                print(len(self.jobs))
                 if len(self.jobs) is not 0:
                     # get the first job
                     job = self.jobs.pop(0)
