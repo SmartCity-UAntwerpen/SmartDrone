@@ -158,7 +158,9 @@ class MotionCommander:
                 self.Drone.DroneStatus=drone.DroneStatusEnum.Idle
 
     def close(self):
-        self._thread.stop()
+
+        if (self._thread is not None):
+            self._thread.stop()
         self._thread = None
 
         self._cf.commander.send_stop_setpoint()

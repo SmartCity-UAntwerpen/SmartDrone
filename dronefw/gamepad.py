@@ -45,7 +45,17 @@ class GamepadClass:
         """
         self._ResetVars()
         self.Callback = 0;
-        threading.Thread(target=self._worker).start()
+        self.gamepad_thread_stop = threading.Event()
+        self.gamepad_thread=threading.Thread(target=self._worker)
+        self.gamepad_thread.start()
+
+
+
+    def Close(self):
+        self.gamepad_thread_stop.set()
+        self.gamepad_thread.join()
+
+
 
     def _ResetVars(self):
         self.ButtonX=0
@@ -67,7 +77,7 @@ class GamepadClass:
 
 
     def _worker(self):
-        while (True):
+        while (not self.gamepad_thread_stop.is_set()):
             #send callback if connection drops
 
             if (self.Connected==0):

@@ -7,6 +7,7 @@ import os
 import signal
 import enum
 
+
 import cflib.crtp
 import threading
 import settings
@@ -249,10 +250,16 @@ class DroneClass:
         print ('Terminating')
         time.sleep(3)
         self.cf.param.set_value('safety.estop', '1')
-        self.mc.close()
-        self.scf.close_link()
         self.logger_thread_stop.set()
         self.logger_thread.join()
+        self.mc.close()
+        self.scf.close_link()
+        print ("1")
+        self.cf.close_link()
+        print ("2")
+        if (self.Gamepad is not None):
+            self.Gamepad.Close()
+        print ("3")
 
 
 
