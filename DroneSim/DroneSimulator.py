@@ -3,44 +3,45 @@ import sys
 sys.path.append(sys.path[0] + "/..")
 
 import DroneSim.Drone as Drone
-import socket, signal, json, asyncore, threading, time
-import Common.Marker as Marker
+import signal, json, time
+from Common.SocketCallback import SocketCallback
+from Common.Marker import Marker
 
-from Common.DBConnection import DBConnection
 
-Drone = Drone.Drone()
+class DroneFlightCommander:
 
-class DroneStatus(asyncore.dispatcher):
+    drone = Drone.Drone()
 
-    global Drone
-    drone = Drone
+    def __init__(self, port):
+        ip = "127.0.0.1"
+        self.command_socket = SocketCallback(ip, port)
+        self.command_socket.add_callback(self.handle_command)
+        self.command_socket.start()
+        self.status_socket = SocketCallback(ip, port + 1)
+        self.status_socket.add_callback(self.handle_status_update)
+        self.status_socket.start()
+        self.markers = None
+        self.drone.black_box.info("Drone simulator started.")
 
-    def __init__(self, ip, port):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.set_reuse_addr()
-        self.bind((ip, port))
-        self.listen(1)  # only allow one incomming connection
-
-    def handle_accept(self):
-        print("connected status")
-        pair = self.accept()  # wait for a connection
-        if pair is None: return
-        sock, addr = pair
-
-        connected = True
-        while connected:
-            data = sock.recv(2048)  # receive data with buffer of size 2048
-            try:
-                data = data.decode()
-                if not data: connected = False
-                data = json.loads(data)
-                if data["action"] == "send_position":
-                    self.send_drone_position(sock)
-                elif data["action"] == "send_status":
-                    self.send_drone_status(sock)
-            except ValueError:
-                self.drone.black_box.error("Received non json message, dropping message.")
+    def handle_status_update(self, sock, data):
+        try:
+            data = data.decode()
+            data = json.loads(data)
+            if data["action"] == "send_position":
+                self.send_drone_position(sock)
+            elif data["action"] == "send_status":
+                self.send_drone_status(sock)
+            elif data["action"] == "marker_update":
+                self.markers = {}
+                for marker in data["markers"].keys():
+                    m = Marker()  # create empty marker
+                    m.load_dict(data["markers"][marker])
+                    self.markers[int(marker)] = m
+                self.drone.black_box.info("Received marker update.")
+        except ValueError:
+            self.drone.black_box.error("Received non json message, dropping message.")
+        except KeyError:
+            self.drone.black_box.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
         res = {
@@ -52,51 +53,14 @@ class DroneStatus(asyncore.dispatcher):
         res = {"status": self.drone.status.value}
         connection.send(json.dumps(res).encode())
 
-    def __del__(self):
-        self.close()
-
-
-class DroneCommander(asyncore.dispatcher):
-
-    global Drone
-    drone = Drone
-
-    def __init__(self, ip, port):
-        asyncore.dispatcher.__init__(self)
-        self.create_socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.set_reuse_addr()
-        self.bind((ip, port))
-        self.listen(1)  # only allow one incomming connection
-        self.markers = self.get_markers()
-
-    def get_markers(self):
-        db = DBConnection()
-        # x,y,z,transitpoint
-        markers = {}
-        for m in db.query("select * from point"):
-            marker = Marker.Marker(m[2], m[3], m[4], m[1])
-            markers[m[1]] = marker
-        if len(markers.keys()) == 0:
-            self.drone.black_box.info("No markers loaded. Empty response from database.")
-        return markers
-
-    def handle_accept(self):
-        print("connected command")
-        pair = self.accept()  # wait for a connection
-        if pair is None: return
-        sock, addr = pair
-
-        connected = True
-        while connected:
-            data = sock.recv(2048)  # receive data with buffer of size 2048
-            try:
-                data = data.decode()
-                if not data: connected = False
-                data = json.loads(data)
-                if data["action"] == "execute_command":
-                    self.perform_action(data, sock)
-            except ValueError:
-                self.drone.black_box.error("Received non json message, dropping message.")
+    def handle_command(self, sock, data):
+        try:
+            data = data.decode()
+            data = json.loads(data)
+            if data["action"] == "execute_command":
+                self.perform_action(data, sock)
+        except ValueError:
+            self.drone.black_box.error("Received non json message, dropping message.")
 
     boundries = {
         "height": [0, 10],
@@ -119,9 +83,9 @@ class DroneCommander(asyncore.dispatcher):
     def perform_action(self, command, conn):
         try:
             if command["command"] == "set_position_marker":
-                if command["id"] is not None:
-                    if command["id"] in self.markers.keys():
-                        marker = self.markers[command["id"]]
+                if command["id"] is not None and self.markers is not None:
+                    if command["id"] in [int(k) for k in self.markers.keys()]:
+                        marker = self.markers[int(command["id"])]
                         self.drone.setCoordinates(marker.x, marker.y, marker.z)
                         conn.send(b'ACK')
                         return
@@ -165,7 +129,7 @@ class DroneCommander(asyncore.dispatcher):
 
                 elif command["command"] == "guided_land":
                     if self.check_values(command, "velocity"):
-                        if command["id"] is not None:
+                        if command["id"] is not None and self.markers is not None:
                             if command["id"] in self.markers.keys():
                                 marker = self.markers[command["id"]]
                                 self.drone.guided_land(command["velocity"], marker.x, marker.y)
@@ -229,7 +193,7 @@ class DroneCommander(asyncore.dispatcher):
                         return
 
                 elif command["command"] == "center":
-                    if command["id"] is not None:
+                    if command["id"] is not None and self.markers is not None:
                         if command["id"] in self.markers.keys():
                             marker = self.markers[command["id"]]
                             self.drone.center(marker.x, marker.y)
@@ -253,21 +217,24 @@ class DroneCommander(asyncore.dispatcher):
             return True
         return False
 
-    def __del__(self):
-        self.close()
+    def close(self):
+        self.status_socket.close()
+        self.command_socket.close()
 
 
 def exit(signal, frame):
     print("Closing drone...")
-    asyncore.close_all()
+    flight_commander.close()
     print("Simulator tured off.")
+    global running
+    running = False
     sys.exit(0)
 
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
-    DroneCommander("127.0.0.1", int(sys.argv[1]))
-    DroneStatus("127.0.0.1", int(sys.argv[1])+1)
-    asyncore.loop()
-    Drone.black_box.info("Drone simulator started.")
+    flight_commander = DroneFlightCommander(int(sys.argv[1]))
 
+    running = True
+    while running:
+        time.sleep(1)

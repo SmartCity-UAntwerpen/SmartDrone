@@ -45,9 +45,9 @@ def remove_drone(drone_id):
 @app.route('/getMarkers/')
 def get_markers():
     global global_backend
-    markers = []
+    markers = {}
     for marker in global_backend.markers:
-        markers.append(global_backend.markers[marker].get_dict())
+        markers[marker] = global_backend.markers[marker].get_dict()
     reply = { "markers": markers }
     return json.dumps(reply)
 

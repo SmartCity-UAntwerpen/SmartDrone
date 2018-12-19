@@ -1,7 +1,7 @@
 
 class Marker:
 
-    def __init__(self, x, y, z, id):
+    def __init__(self, x=0, y=0, z=0, id=0):
         """
         This class holds the information of a specific marker
         :param x: x location
@@ -35,6 +35,6 @@ class Marker:
             self.y = dict["y"]
             self.z = dict["z"]
             self.id = dict["id"]
-        except: print("Error loading dictionaty")
+        except: print("Error loading dictionary!")
 
 

@@ -1,12 +1,20 @@
 import paho.mqtt.client as paho
-import json, socket, asyncore, sys, signal
+import json
 import DroneBackend.BackendLogger as BackendLogger
 import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
+from Common.Marker import Marker
 
 base_topic = "smartcity/drones/test"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
+
+
+temp_markers = {
+    0: Marker(0,0,0,0),
+    1: Marker(1,1,0,1),
+    2: Marker(2,1,0,2),
+}
 
 
 class Backend():
@@ -23,8 +31,10 @@ class Backend():
         self.port = port
 
         # Connect to database
-        db = db_connection.DBConnection()
-        self.markers = db.get_markers()
+        #db = db_connection.DBConnection()
+        #self.markers = db.get_markers()
+
+        self.markers = temp_markers
 
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic

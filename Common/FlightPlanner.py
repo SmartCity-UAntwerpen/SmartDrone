@@ -20,12 +20,18 @@ class FlightPlanner:
         """
         This class makes a graph of all the markers.
         With the use of this graph it is possible to find the most optimal route between two markers
-        It uses the database to find all the markers in the world.
         It sets a maxFlightDistance
         """
-        self.db = DBConnection()
         self.maxFlightDistance = 1
-        self.markers = self.setMarkers()
+        self.markers = {}
+        self.G = None
+
+    def update_markers(self, markers):
+        self.markers = {}
+        for marker in markers.keys():
+            m = Marker() # create empty marker
+            m.load_dict(markers[marker])
+            self.markers[int(marker)] = m
         self.G = self.makeGraph()
 
 
@@ -108,26 +114,3 @@ class FlightPlanner:
         m2 = self.markers[id_marker2]
         m2.print()
         return nx.shortest_path_length(self.G, m1,m2, weight='weight')
-
-    def setMarkers(self):
-        """
-        get the markers from the database and store them in an array
-        :return: array with markers
-        """
-
-        # x,y,z,transitpoint
-        markers = {}
-        for m in self.db.query("select * from point"):
-            markers[m[1]] = Marker(m[2], m[3], m[4], m[1])
-        return markers
-
-
-if __name__ == "__main__":
-    """
-    Small test
-    """
-    f = FlightPlanner()
-    cost = f.calculateCost(0, 4)
-    print(cost)
-    flightplan = f.find_path(0,4)
-    print(flightplan)

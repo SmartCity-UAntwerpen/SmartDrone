@@ -45,15 +45,14 @@ class Controller(threading.Thread):
 
     running = True
     executing_flight_plan = False
-    s_command = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s_status = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    command_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    status_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     poller = None
     logger = clogger.logger
 
     id = -1         # id should be received from backend
     mqtt = None
     backend_topic = None
-    socket_lock = threading.Lock()
 
     current_marker_id = 0
     flight_planner = fp.FlightPlanner()
@@ -86,15 +85,23 @@ class Controller(threading.Thread):
 
         self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
 
+        # succesfully subscribed to backend, update markers
+        url = "http://" + self.ip + ":8082/getMarkers/"
+        markers = json.loads(requests.get(url).text)
+        self.flight_planner.update_markers(markers["markers"])
+
         # connect with exection process
         connected = False
         counter = 0
         while not connected and counter < 10:
             try:
-                self.s_status.connect(("127.0.0.1", self.port + 1))
-                self.s_command.connect(("127.0.0.1", self.port))
-
+                self.status_socket.connect(("127.0.0.1", self.port + 1))
+                self.command_socket.connect(("127.0.0.1", self.port))
                 connected = True
+
+                markers["action"] = "marker_update"
+                self.status_socket.send(json.dumps(markers).encode())
+
                 self.logger.info("Connection with exectution process established.")
             except socket.error as error:
                 if error.errno == errno.ECONNREFUSED:
@@ -104,7 +111,7 @@ class Controller(threading.Thread):
                 else: break
 
         if not connected:
-            self.logger.error("Connection with exectution process not established. Shutting down.")
+            self.logger.error("Connection with execution process not established. Shutting down.")
             return False
 
         self.poller = Poller(self)
@@ -117,15 +124,16 @@ class Controller(threading.Thread):
         }
         try: controller.send_command(json.dumps(initialze_command))
         except CommandNotExectuedException: self.logger.warn("Position not initialized correct, initialze command failed.")
+        self.start()
         return True # controller successfully started
 
     def send_command(self, data):
-        self.s_command.send(data.encode())
-        data = self.s_command.recv(2048)
+        self.command_socket.send(data.encode())
+        data = self.command_socket.recv(2048)
 
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
-            data = self.s_command.recv(2048)
+            data = self.command_socket.recv(2048)
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
@@ -159,8 +167,8 @@ class Controller(threading.Thread):
 
     def send_position_update(self):
         message = { "action": "send_position" }
-        self.s_status.send(json.dumps(message).encode())
-        data = self.s_status.recv(2048)
+        self.status_socket.send(json.dumps(message).encode())
+        data = self.status_socket.recv(2048)
         try:
             data = json.loads(data.decode())
             res = {
@@ -174,8 +182,8 @@ class Controller(threading.Thread):
     def get_drone_status(self):
         message = {"action": "send_status"}
         try:
-            self.s_status.send(json.dumps(message).encode())
-            data = self.s_status.recv(2048)
+            self.status_socket.send(json.dumps(message).encode())
+            data = self.status_socket.recv(2048)
             data = json.loads(data.decode())
             return data["status"]
         except: self.logger.warn("Status update failed.")
@@ -213,7 +221,6 @@ class Controller(threading.Thread):
     def execute_job(self,job):
         try:
             status = DroneStatusEnum(self.get_drone_status())
-            print(status)
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
                 if self.current_marker_id != job["point2"]:
@@ -265,8 +272,8 @@ class Controller(threading.Thread):
         if self.mqtt:
             self.mqtt.disconnect()
             self.mqtt.loop_stop()
-        self.s_command.close()
-        self.s_status.close()
+        self.command_socket.close()
+        self.status_socket.close()
         if self.poller:
             if self.poller.isAlive():
                 self.poller.join()
@@ -289,7 +296,5 @@ if __name__ == '__main__':
     if not controller.start_controller():
         exit(0,0)
 
-    controller.start()
-
     while controller.running:
-        time.sleep(0.1)
+        time.sleep(1)
