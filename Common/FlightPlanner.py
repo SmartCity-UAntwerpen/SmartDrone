@@ -101,6 +101,12 @@ class FlightPlanner:
             }
             flight_plan["commands"].append(command)
 
+            command = {
+                "command": "center",
+                "id": path[index+1].id,     #for simulator
+            }
+            flight_plan["commands"].append(command)
+
         # land
         command = {
             "command": "guided_land",
