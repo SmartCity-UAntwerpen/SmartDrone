@@ -1,6 +1,6 @@
 create database drones;
 use drones;
-create table points(id int(11) unsigned auto_increment primary key not null,pointID int(16) not null,x int(16) not null,y int(16) not null,z int(16) not null,transitpoint bool not null);
+create table points(id int(11) unsigned auto_increment primary key not null,pointID int(16) not null,x int(16) not null,y int(16) not null,z int(16) not null);
 insert into points(pointID, x,y,z) values(0,0,0,0);
 insert into points(pointID, x,y,z) values(1,1,0,0);
 insert into points(pointID, x,y,z) values(2,2,0,0);
