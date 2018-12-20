@@ -66,29 +66,33 @@ class Controller(threading.Thread):
 
     def start_controller(self):
         # subscribe to backend
-        mac = get_mac()
-        url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
+        try:
+            mac = get_mac()
+            url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
 
-        data = json.loads(requests.get(url).text)
-        self.id = data["id"]
-        self.mqtt = paho.Client()
-        self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
-        self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
-        self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
-        self.mqtt.subscribe(data["mqtt_topic"])
-        self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))
-        self.mqtt.loop_start()
-        self.backend_topic = data["mqtt_topic"] + "/backend"
+            data = json.loads(requests.get(url).text)
+            self.id = data["id"]
+            self.mqtt = paho.Client()
+            self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
+            self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
+            self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
+            self.mqtt.subscribe(data["mqtt_topic"])
+            self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))
+            self.mqtt.loop_start()
+            self.backend_topic = data["mqtt_topic"] + "/backend"
 
-        self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
-        self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
+            self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
+            self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
 
-        self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
+            self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
 
-        # succesfully subscribed to backend, update markers
-        url = "http://" + self.ip + ":8082/getMarkers/"
-        markers = json.loads(requests.get(url).text)
-        self.flight_planner.update_markers(markers["markers"])
+            # succesfully subscribed to backend, update markers
+            url = "http://" + self.ip + ":8082/getMarkers/"
+            markers = json.loads(requests.get(url).text)
+            self.flight_planner.update_markers(markers["markers"])
+        except Exception as e:
+            self.logger.error("Connection with backend failed.")
+            return False
 
         # connect with exection process
         connected = False
@@ -210,10 +214,17 @@ class Controller(threading.Thread):
                     self.send_command(json.dumps(command))
                     executed = True
                 except Exception as e:
+                    counter += 1
                     if type(e) == AbortException:
                         self.logger.error("Drone aborted command. Stopping executing job.")
                         self.executing_flight_plan = False
                         raise AbortException()
+                    if type(e) == DroneNotArmedException:
+                        self.logger.error("Drone not armed. Retrying %d..." % counter)
+                    if type(e) == CommandNotExectuedException:
+                        self.logger.error("Command not executed. Retrying %d..." % counter)
+                    if type(e) == StateException:
+                        self.logger.error("Command not executed. Wrong state. Retrying %d..." % counter)
 
             if not executed: raise AbortException()
         self.executing_flight_plan = False
@@ -249,6 +260,8 @@ class Controller(threading.Thread):
                             self.logger.error("Job execution aborted.")
                             #self.jobs.append(job)
                             # inform backend
+                        else:
+                            self.logger.warn("Job failed. Exception: %s" % str(e))
                 else:
                     self.logger.info("Already at point2.")
         except KeyError:
@@ -283,7 +296,8 @@ def exit(signal, frame):
     print("Controller closed.")
     global controller
     controller.close()
-    controller.join()
+    if controller.isAlive():
+        controller.join()
     try:
         sys.exit(0)
     except: pass
