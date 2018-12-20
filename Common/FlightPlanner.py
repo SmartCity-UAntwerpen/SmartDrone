@@ -29,7 +29,7 @@ class FlightPlanner:
     def update_markers(self, markers):
         self.markers = {}
         for marker in markers.keys():
-            if type(markers[int(marker)]) != Marker:
+            if type(markers[marker]) != Marker:
                 m = Marker() # create empty marker
                 m.load_dict(markers[marker])
             else: m = markers[int(marker)]
