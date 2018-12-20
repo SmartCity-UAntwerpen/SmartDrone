@@ -78,11 +78,10 @@ class Visualizer:
         """
         db = DBConnection()
         # x,y,z,transitpoint
-        markers = []
-        for m in db.query("select * from point"):
-            markers.append(Marker(m[2], m[3], m[4], m[1]))
+        markers = db.get_markers()
 
-        for marker in markers:
+        for marker in markers.values():
+
             x = marker.x
             y = marker.y
             if x > self.max_x:
@@ -94,7 +93,7 @@ class Visualizer:
             if y < self.min_y:
                 self.min_y = y
 
-        return markers
+        return markers.values()
 
     def calculate_screen_location(self, marker):
         """
@@ -111,8 +110,8 @@ class Visualizer:
         total_distance_x = self.max_x - self.min_x
         total_distance_y = self.max_y - self.min_y
 
-        delta_x = distance_x / total_distance_x
-        delta_y = distance_y / total_distance_y
+        delta_x = 1 if total_distance_x == 0 else distance_x / total_distance_x
+        delta_y = 1 if total_distance_y == 0 else distance_y / total_distance_y
 
         pos_x = int(self.width * delta_x)
         pos_y = int(self.height * delta_y)
