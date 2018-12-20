@@ -35,7 +35,7 @@ class DroneFlightCommander:
             self.status_socket.add_callback(self.handle_status_update)
             self.status_socket.start()
             self.markers = None
-            self.logger.info("Drone simulator started.")
+            self.logger.info("Drone started.")
             self.running = True
         else:
             self.running = False
