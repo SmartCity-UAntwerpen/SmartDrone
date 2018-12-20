@@ -218,9 +218,22 @@ class Controller(threading.Thread):
             if not executed: raise AbortException()
         self.executing_flight_plan = False
 
+    def fly_from_to(self, point1, point2):
+        plan = self.flight_planner.find_path(point1, point2)
+        if plan is None:
+            self.logger.warn("No path from point %d to %d" % (point1, point2))
+            raise AbortException()
+        self.logger.info("Flying from %d to %d." % (point1, point2))
+        string = ""
+        for command in plan["commands"]:
+            string += "%s" % str(command) + "\n"
+        self.logger.info("Flight plan:\n%s" % string)
+        self.executing_flight_plan = True
+        self.execute_flight_plan(plan)
+        self.current_marker_id = point2
+
     def execute_job(self,job):
         try:
-            status = DroneStatusEnum(self.get_drone_status())
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
                 if self.current_marker_id != job["point2"]:
@@ -228,27 +241,14 @@ class Controller(threading.Thread):
                         if self.current_marker_id != job["point1"]:
                             # first go to point1
                             self.logger.info("Not on point1, flying to point1")
-                            plan = self.flight_planner.find_path(self.current_marker_id, job["point1"])
-                            string = ""
-                            for command in plan["commands"]:
-                                string += "%s" % str(command) + "\n"
-                            self.logger.info("Flight plan:\n %s" % string)
-                            self.executing_flight_plan = True
-                            self.execute_flight_plan(plan)
-                            self.current_marker_id = job["point1"]
+                            self.fly_from_to(self.current_marker_id, job["point1"])
 
-                        self.logger.info("Flying to point2.")
-                        plan = self.flight_planner.find_path(job["point1"], job["point2"])
-                        string = ""
-                        for command in plan["commands"]:
-                            string += "%s" % str(command) + "\n"
-                        self.logger.info("Flight plan:\n %s" % string)
-                        self.executing_flight_plan = True
-                        self.execute_flight_plan(plan)
-                        self.current_marker_id = job["point2"]
-                    except:
-                        self.logger.error("Job execution aborted.")
-                        self.jobs.append(job)
+                        self.fly_from_to(job["point1"], job["point2"])
+                    except Exception as e:
+                        if type(e) == AbortException:
+                            self.logger.error("Job execution aborted.")
+                            #self.jobs.append(job)
+                            # inform backend
                 else:
                     self.logger.info("Already at point2.")
         except KeyError:

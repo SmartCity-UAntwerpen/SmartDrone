@@ -21,7 +21,7 @@ class SocketCallback(threading.Thread):
                 try:
                     data = sock.recv(2048)
                     if not data:
-                        pair = None # connection closed
+                        pair = None     # connection closed
                         continue
                     for callback in self.callbacks: callback(sock, data)
                 except TimeoutError: pass

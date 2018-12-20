@@ -78,7 +78,7 @@ class DBConnection:
 
     def get_markers(self):
         markers = {}
-        for m in self.query("select * from point"):
+        for m in self.query("select * from points"):
             marker = Marker.Marker(m[2], m[3], m[4], m[1])
             markers[m[1]] = marker
         return markers

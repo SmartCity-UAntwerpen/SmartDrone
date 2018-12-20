@@ -103,7 +103,7 @@ class DroneFlightCommander:
                 if self.wait_for_arm():
                     conn.send(b'ACK')
                 else:
-                    conn.send(b'NOT ARMED')
+                    conn.send(b'ABORT')
                 return
 
             if self.drone.is_armed():

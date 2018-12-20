@@ -29,11 +29,12 @@ class FlightPlanner:
     def update_markers(self, markers):
         self.markers = {}
         for marker in markers.keys():
-            m = Marker() # create empty marker
-            m.load_dict(markers[marker])
+            if type(markers[int(marker)]) != Marker:
+                m = Marker() # create empty marker
+                m.load_dict(markers[marker])
+            else: m = markers[int(marker)]
             self.markers[int(marker)] = m
         self.G = self.makeGraph()
-
 
     def makeGraph(self):
         """
@@ -67,50 +68,50 @@ class FlightPlanner:
         """
         m1 = self.markers[id_marker1]
         m2 = self.markers[id_marker2]
-        flight_plan = {
-            "commands": [],
-        }
 
         try:
             path = nx.dijkstra_path(self.G, m1, m2)
         except NetworkXNoPath:
             path = None
 
-        if path is not None:
-            fly_height = 1
-            # takeoff
-            takeoff = {
-                "command": "takeoff",
-                "velocity": 0.5,
-                "height": fly_height
-            }
-            flight_plan["commands"].append(takeoff)
+        if path is None: return None
 
-            # fly to target
-            for index in range(0, len(path) - 1):
-                delta_x = path[index + 1].x - path[index].x
-                delta_y = path[index + 1].y - path[index].y
-                delta_z = path[index + 1].z - path[index].z
-                command = {
-                    "command": "move",
-                    "goal": (delta_x, delta_y, delta_z),
-                    "velocity": 0.5
-                }
-                flight_plan["commands"].append(command)
+        flight_plan = {
+            "commands": [],
+        }
 
-            # land
+        fly_height = 1
+        # takeoff
+        takeoff = {
+            "command": "takeoff",
+            "velocity": 0.5,
+            "height": fly_height
+        }
+        flight_plan["commands"].append(takeoff)
+
+        # fly to target
+        for index in range(0, len(path) - 1):
+            delta_x = path[index + 1].x - path[index].x
+            delta_y = path[index + 1].y - path[index].y
+            delta_z = path[index + 1].z - path[index].z
             command = {
-                "command": "guided_land",
-                "velocity": 0.2,
-                "id": m2.id
+                "command": "move",
+                "goal": (delta_x, delta_y, delta_z),
+                "velocity": 0.5
             }
             flight_plan["commands"].append(command)
+
+        # land
+        command = {
+            "command": "guided_land",
+            "velocity": 0.2,
+            "id": m2.id
+        }
+        flight_plan["commands"].append(command)
 
         return flight_plan
 
     def calculate_cost(self, id_marker1, id_marker2):
         m1 = self.markers[id_marker1]
-        m1.print()
         m2 = self.markers[id_marker2]
-        m2.print()
         return nx.shortest_path_length(self.G, m1,m2, weight='weight')
