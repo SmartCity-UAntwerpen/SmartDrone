@@ -23,9 +23,8 @@ class DroneFlightCommander:
         LastStatusTime = 0
         StatusUpdateInterval = 3
         if time.time() - LastStatusTime > StatusUpdateInterval:
-            print("Battery voltage:%s" % (self.drone.Vbat))
-            print("Status:%s" % (self.drone.DroneStatus))
-            print("")
+            self.logger.info("Battery voltage:%s" % (self.drone.Vbat))
+            self.logger.info("Status:%s" % (self.drone.DroneStatus))
             LastStatusTime = time.time()
             ip = "127.0.0.1"
             self.command_socket = SocketCallback(ip, port)
@@ -57,8 +56,10 @@ class DroneFlightCommander:
                     self.markers[int(marker)] = m
                     self.logger.info("Received marker update.")
         except ValueError:
+            self.logger.exception(ValueError)
             self.logger.error("Received non json message, dropping message.")
         except KeyError:
+            self.logger.exception(KeyError)
             self.logger.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
@@ -78,6 +79,7 @@ class DroneFlightCommander:
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
         except ValueError:
+            self.logger.exception(ValueError)
             self.logger.error("Received non json message, dropping message.")
 
     boundries = {
@@ -94,12 +96,16 @@ class DroneFlightCommander:
                 if command[to_check] is None: return False
                 values = self.boundries[to_check]
                 if not (values[0] <= command[to_check] <= values[1]):
+                    self.logger.error("Values not in boundaries")
                     return False
-            except KeyError: return False
+            except KeyError:
+                self.logger.exception(KeyError)
+                return False
         return True
 
     def perform_action(self, command, conn):
         try:
+            self.logger.log(15, command["command"])
             if command["command"] == "set_position_marker":
                 if command["id"] is not None and self.markers is not None:
                     if command["id"] in [int(k) for k in self.markers.keys()]:
@@ -109,19 +115,24 @@ class DroneFlightCommander:
                         self.pz = marker.z
                         conn.send(b'ACK')
                         return
+                self.logger.error("Command id was None or self.markers were none.")
                 conn.send(b'ERROR')
                 return
 
             if self.drone.DroneStatus == Drone.DroneStatusEnum.Idle:
+                self.logger.info("Arming drone.")
                 if command["command"] == "arm":
                     #self.drone.Arm()
                     conn.send(b'ACK')
                     return
 
+                self.logger.info("Drone not armed yet wait for arm.")
                 conn.send(b'NOT_ARMED')
                 if self.wait_for_arm(120):
+                    self.logger.info("Drone armed.")
                     conn.send(b'ACK')
                 else:
+                    self.logger.info("Drone not armed abort.")
                     conn.send(b'ABORT')
                 return
 
@@ -132,6 +143,7 @@ class DroneFlightCommander:
                         conn.send(b'ACK')
                         return
 
+                self.logger.error("Status armed, command invalid.")
                 conn.send(b'ERROR')
                 return
 
@@ -204,11 +216,13 @@ class DroneFlightCommander:
 
                 elif command["command"] == "center":
                     marker = self.drone.ArucoNav.Center()
-                    self.logger.error(marker)
+                    self.logger.info(marker)
                     if marker is None:
                         self.drone.mc.land()
+                        self.logger.error("No marker")
                         conn.send(b'ABORT')
                     else:
+                        # TODO check if marker is the correct marker and handle the exceptions.
                         if self.markers is not None:
                             marker = self.markers[marker.id]
                             self.px = marker.x
@@ -217,32 +231,34 @@ class DroneFlightCommander:
                         conn.send(b'ACK')
                     return
 
+                self.logger.error("Command not executed.")
                 conn.send(b'ERROR')
                 return
 
+            self.logger.error("State Exception.")
             conn.send(b'STATE_ERROR')
             return
         except Exception as e:
+            self.logger.exception(e)
             if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
             else:
                 self.logger.error("Command aborted.")
-                self.logger.error(e)
                 conn.send(b'ABORT')
 
     def wait_for_arm(self,timeout):
         sleep_time = 0.1
         counter = 0
-        self.logger.error("wait for arm")
+        self.logger.info("Wait for arm.")
         while self.running and counter <= timeout:
             if self.drone.Gamepad.Start == 1:
                 self.drone.Arm()
-                self.logger.error("drone armed")
+                self.logger.info("Drone armed.")
                 return True
             counter += sleep_time
             time.sleep(sleep_time)
 
-        self.logger.error("timeout drone not armed")
+        self.logger.error("Timeout drone not armed.")
         return False
 
     def close(self):
@@ -268,3 +284,4 @@ if __name__ == "__main__":
 
 
 
+6

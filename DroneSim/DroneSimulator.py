@@ -9,7 +9,6 @@ from Common.Marker import Marker
 
 
 class DroneFlightCommander:
-
     drone = Drone.Drone()
 
     def __init__(self, port):
@@ -27,6 +26,7 @@ class DroneFlightCommander:
         try:
             data = data.decode()
             data = json.loads(data)
+            self.drone.black_box.log(15,data)
             if data["action"] == "send_position":
                 self.send_drone_position(sock)
             elif data["action"] == "send_status":
@@ -39,8 +39,10 @@ class DroneFlightCommander:
                     self.markers[int(marker)] = m
                 self.drone.black_box.info("Received marker update.")
         except ValueError:
+            self.drone.black_box.exception(ValueError)
             self.drone.black_box.error("Received non json message, dropping message.")
         except KeyError:
+            self.drone.black_box.exception(KeyError)
             self.drone.black_box.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
@@ -60,6 +62,7 @@ class DroneFlightCommander:
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
         except ValueError:
+            self.drone.black_box.exception(ValueError)
             self.drone.black_box.error("Received non json message, dropping message.")
 
     boundries = {
@@ -76,12 +79,16 @@ class DroneFlightCommander:
                 if command[to_check] is None: return False
                 values = self.boundries[to_check]
                 if not (values[0] <= command[to_check] <= values[1]):
+                    self.drone.black_box.warn("Values not valid.")
                     return False
-            except KeyError: return False
+            except KeyError:
+                self.drone.black_box.exception(KeyError)
+                return False
         return True
 
     def perform_action(self, command, conn):
         try:
+            self.drone.black_box.log(15, command)
             if command["command"] == "set_position_marker":
                 if command["id"] is not None and self.markers is not None:
                     if command["id"] in [int(k) for k in self.markers.keys()]:
@@ -89,20 +96,25 @@ class DroneFlightCommander:
                         self.drone.setCoordinates(marker.x, marker.y, marker.z)
                         conn.send(b'ACK')
                         return
+                self.drone.black_box.error("Not able to set position marker because id is None or markers are None.")
                 conn.send(b'ERROR')
                 return
 
             if self.drone.is_idle():
                 # not armed return
                 if command["command"] == "arm":
+                    self.drone.black_box.info("Arm drone.")
                     self.drone.arm()
                     conn.send(b'ACK')
                     return
 
+                self.drone.black_box.info("Drone not armed yet wait for arm.")
                 conn.send(b'NOT_ARMED')
                 if self.wait_for_arm():
+                    self.drone.black_box.info("Drone armed.")
                     conn.send(b'ACK')
                 else:
+                    self.drone.black_box.error("Drone was not armed.")
                     conn.send(b'ABORT')
                 return
 
@@ -118,10 +130,12 @@ class DroneFlightCommander:
                     conn.send(b'ACK')
                     return
 
+                self.drone.black_box.error("Status: armed. Input is not a valid command: %s." % command["command"])
                 conn.send(b'ERROR')
                 return
 
             if self.drone.is_flying():
+                self.drone.black_box.log(15, "Status: flying. Command %s" % command["command"])
                 if command["command"] == "land":
                     self.drone.land()
                     conn.send(b'ACK')
@@ -200,12 +214,15 @@ class DroneFlightCommander:
                             conn.send(b'ACK')
                         return
 
+                self.drone.black_box.error("Command not executed.")
                 conn.send(b'ERROR')
                 return
 
+            self.drone.black_box.error("State error.")
             conn.send(b'STATE_ERROR')
             return
         except Exception as e:
+            self.drone.black_box.exception(e)
             if type(e) == ValueError:
                 self.drone.black_box.error("Received wrong command message (no JSON).")
             else:
