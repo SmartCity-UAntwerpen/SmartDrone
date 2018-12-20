@@ -105,7 +105,7 @@ class DroneFlightCommander:
 
     def perform_action(self, command, conn):
         try:
-            self.logger.info(command["command"])
+            self.logger.log(15, command["command"])
             if command["command"] == "set_position_marker":
                 if command["id"] is not None and self.markers is not None:
                     if command["id"] in [int(k) for k in self.markers.keys()]:

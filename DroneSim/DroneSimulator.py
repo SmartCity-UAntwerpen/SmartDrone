@@ -26,7 +26,7 @@ class DroneFlightCommander:
         try:
             data = data.decode()
             data = json.loads(data)
-            self.drone.black_box.info(data)
+            self.drone.black_box.log(15,data)
             if data["action"] == "send_position":
                 self.send_drone_position(sock)
             elif data["action"] == "send_status":
@@ -88,7 +88,7 @@ class DroneFlightCommander:
 
     def perform_action(self, command, conn):
         try:
-            self.drone.black_box.info(command)
+            self.drone.black_box.log(15, command)
             if command["command"] == "set_position_marker":
                 if command["id"] is not None and self.markers is not None:
                     if command["id"] in [int(k) for k in self.markers.keys()]:
@@ -135,7 +135,7 @@ class DroneFlightCommander:
                 return
 
             if self.drone.is_flying():
-                self.drone.black_box.info("Status: flying. Command %s" % command["command"])
+                self.drone.black_box.log(15, "Status: flying. Command %s" % command["command"])
                 if command["command"] == "land":
                     self.drone.land()
                     conn.send(b'ACK')

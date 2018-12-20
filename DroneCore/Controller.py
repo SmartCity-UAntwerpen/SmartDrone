@@ -139,15 +139,15 @@ class Controller(threading.Thread):
         return True # controller successfully started
 
     def send_command(self, data):
-        self.logger.info("send_command %s", data)
+        self.logger.log(15,"send_command %s", data)
         self.command_socket.send(data.encode())
         data = self.command_socket.recv(2048)
-        self.logger.info("Received data %s", data.decode())
+        self.logger.log(15,"Received data %s", data.decode())
 
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
-            self.logger.info("Received data %s", data.decode())
+            self.logger.log(15,"Received data %s", data.decode())
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
@@ -191,7 +191,7 @@ class Controller(threading.Thread):
                 "action": "position_update",
                 "position": data["position"]
             }
-            self.logger.info("%s", res)
+            self.logger.log(15, "%s", res)
             self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
         except ValueError: self.logger.error("Position result was not in the correct format (no JSON).")
 
