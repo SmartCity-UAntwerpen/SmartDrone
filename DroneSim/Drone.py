@@ -164,7 +164,9 @@ class Drone:
         self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
-    def center(self,x,y):     # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
+    def center(self,x,y):
+        # TODO check
+        # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
         fov = 60
         view_distance = 2 * self.z * math.tan(fov / 2)
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance /2:
