@@ -1,4 +1,3 @@
-
 import enum, math, time
 import numpy as np
 import BlackBox
@@ -8,15 +7,16 @@ VELOCITY = 0.5
 DEFAULT_HEIGHT = 0.5
 RATE = 360.0 / 5
 
+
 class DroneStatusEnum(enum.Enum):
-    Init=0
-    Idle=1
-    Armed=2
-    Flying=3
-    EmergencyLowBattery=4
-    EmergencyGamepadLoss=5
-    EmergencyGamepadLand=6
-    EmergencyGamepadStop=7
+    Init = 0
+    Idle = 1
+    Armed = 2
+    Flying = 3
+    EmergencyLowBattery = 4
+    EmergencyGamepadLoss = 5
+    EmergencyGamepadLand = 6
+    EmergencyGamepadStop = 7
 
 
 class Drone:
@@ -31,7 +31,7 @@ class Drone:
     x, y, z = 0, 0, 0
     pitch, yaw, roll = 0, 0, 0
     flying = False
-    status = DroneStatusEnum.Idle       # or init? no real initialization in simulation
+    status = DroneStatusEnum.Idle  # or init? no real initialization in simulation
     black_box = BlackBox.create_black_box()
 
     def is_armed(self):
@@ -55,19 +55,19 @@ class Drone:
         if self.status == DroneStatusEnum.Armed:
             self.status = DroneStatusEnum.Flying
             self.black_box.info("Taking off to %0.2f m" % height)
-            self.moveDistance(0,0,height,velocity)
+            self.moveDistance(0, 0, height, velocity)
         else:
             self.black_box.warn("Drone not armed! Arm drone before takeoff.")
 
     def land(self):
         self.black_box.info("Drone landing.")
-        self.moveDistance(0,0,-self.z,velocity=0.2,deviation_sigma=0.02)
+        self.moveDistance(0, 0, -self.z, velocity=0.2, deviation_sigma=0.02)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 
-    def guided_land(self,velocity,x,y):
+    def guided_land(self, velocity, x, y):
         self.black_box.info("Drone landing (guided).")
-        self.center(x,y)
+        self.center(x, y)
         self.moveDistance(0, 0, -self.z, velocity=velocity, deviation_sigma=0)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
@@ -81,7 +81,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(distance,0,0,velocity)
+        self.moveDistance(distance, 0, 0, velocity)
 
     def backward(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -92,7 +92,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(-distance,0,0,velocity)
+        self.moveDistance(-distance, 0, 0, velocity)
 
     def left(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -103,7 +103,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(0,distance,0,velocity)
+        self.moveDistance(0, distance, 0, velocity)
 
     def right(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -114,7 +114,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(0,-distance,0,velocity)
+        self.moveDistance(0, -distance, 0, velocity)
 
     def up(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -125,7 +125,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(0,0,distance,velocity)
+        self.moveDistance(0, 0, distance, velocity)
 
     def down(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -136,7 +136,7 @@ class Drone:
         if velocity > MAX_VELOCITY:
             velocity = MAX_VELOCITY
 
-        self.moveDistance(0,0,-distance,velocity)
+        self.moveDistance(0, 0, -distance, velocity)
 
     def turnLeft(self, angle_degrees=None, rate=RATE):
         if angle_degrees is None:
@@ -164,21 +164,22 @@ class Drone:
         self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
-    def center(self,x,y):
-        # TODO check
+    def center(self, x, y):
         # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
         fov = 60
-        view_distance = 2 * self.z * math.tan(fov / 2)
-        if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance /2:
+        view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
+        if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             dx = float(x - self.x)
             dy = float(y - self.y)
-            self.black_box.info("Centering drone to x: %.2f y: %0.2f" % (x,y))
-            self.moveDistance(dx,dy,0,velocity=0.5,deviation_mean=0,deviation_sigma=0) # move to the position with 0 randomness
+            self.black_box.info("Centering drone to x: %.2f y: %0.2f" % (x, y))
+            self.moveDistance(dx, dy, 0, velocity=0.5, deviation_mean=0,
+                              deviation_sigma=0)  # move to the position with 0 randomness
             self.yaw = 0
         else:
             self.black_box.info("Centering failed, no marker found.")
 
-    def moveDistance(self, distance_x_m ,distance_y_m ,distance_z_m, velocity=0.5, deviation_mean=0, deviation_sigma=0.05):
+    def moveDistance(self, distance_x_m, distance_y_m, distance_z_m, velocity=0.5, deviation_mean=0,
+                     deviation_sigma=0.05):
         """
         Move distance specified by the distance x,y,z parameters [m], the deviation_mean and deviation_simgma control
         the randomness of the movement
@@ -190,8 +191,8 @@ class Drone:
         :param deviation_sigma: control the randomness of the movement
         :return:
         """
-        distance_x_m += np.random.normal(deviation_mean,deviation_sigma)
-        distance_y_m += np.random.normal(deviation_mean,deviation_sigma)
+        distance_x_m += np.random.normal(deviation_mean, deviation_sigma)
+        distance_y_m += np.random.normal(deviation_mean, deviation_sigma)
 
         distance = math.sqrt(distance_x_m * distance_x_m +
                              distance_y_m * distance_y_m +
@@ -200,15 +201,16 @@ class Drone:
         if not self.check_before_flight(distance, velocity):
             return
 
-        #velocity += np.random.normal(0,0.1)
+        # velocity += np.random.normal(0,0.1)
 
         flight_time = distance / velocity
 
         # rotation
         roll = np.mat(
-            [[1, 0,0], [0, math.cos(self.roll), -math.sin(self.roll)], [0 , math.sin(self.roll), math.cos(self.roll)]])
+            [[1, 0, 0], [0, math.cos(self.roll), -math.sin(self.roll)], [0, math.sin(self.roll), math.cos(self.roll)]])
         pitch = np.mat(
-            [[math.cos(self.pitch), 0, -math.sin(self.pitch)], [0, 1, 0], [math.sin(self.pitch), 0, math.cos(self.pitch)]])
+            [[math.cos(self.pitch), 0, -math.sin(self.pitch)], [0, 1, 0],
+             [math.sin(self.pitch), 0, math.cos(self.pitch)]])
         yaw = np.mat(
             [[math.cos(self.yaw), -math.sin(self.yaw), 0], [math.sin(self.yaw), math.cos(self.yaw), 0], [0, 0, 1]])
 
@@ -219,12 +221,12 @@ class Drone:
         self.y += move_vector[1]
         self.z += move_vector[2]
         self.black_box.debug("New position: (%.2f, %.2f, %.2f) duration: %.2f s velocity: %.2f m/s"
-              % (self.x, self.y, self.z, flight_time, velocity))
+                             % (self.x, self.y, self.z, flight_time, velocity))
         time.sleep(flight_time)
 
     def printInfo(self):
         print("Drone: \nPos: (%.2f, %.2f, %.2f) \nAngles: \n\t- pitch: %.2f \n\t- yaw: %.2f \n\t- roll: %.2f"
-              % (self.x, self.y, self.z,self.pitch,self.yaw,self.roll))
+              % (self.x, self.y, self.z, self.pitch, self.yaw, self.roll))
 
     def check_before_flight(self, distance, velocity):
         if distance < 0 or velocity < 0:
@@ -235,7 +237,7 @@ class Drone:
             return False
         return True
 
-    def setCoordinates(self,x,y,z):
+    def setCoordinates(self, x, y, z):
         # set the coordinates of the drone, use this function only when starting
         self.x = x
         self.y = y
