@@ -1,6 +1,6 @@
 
-from flask import Flask, request
-import multiprocessing, json, threading
+from flask import Flask
+import json
 
 app = Flask("DroneBackend")
 
@@ -32,7 +32,7 @@ def flagtransitmap_api():
 @app.route('/addDrone/<unique_msg>')
 def add_drone(unique_msg):
     global global_backend
-    reply = global_backend.add_drone(unique_msg)
+    reply = global_backend.add_drone(int(unique_msg))
     return json.dumps(reply)
 
 
@@ -41,6 +41,7 @@ def remove_drone(drone_id):
     global global_backend
     reply = global_backend.remove_drone(drone_id)
     return json.dumps(reply)
+
 
 @app.route('/getMarkers/')
 def get_markers():
@@ -51,3 +52,24 @@ def get_markers():
     reply = { "markers": markers }
     return json.dumps(reply)
 
+
+@app.route('/<pidstart>/<pidend>')
+def calculate_cost(pidstart, pidend):
+    global global_backend
+    try: cost = global_backend.flightplanner.calculate_cost(int(pidstart), int(pidend))
+    except: cost = -1
+    return json.dumps({ "cost": cost })
+
+
+@app.route('/job/execute/<pidstart>/<pidend>/<jobid>')
+def add_job(pidstart, pidend, jobid):
+    try:
+        global global_backend
+        job = {
+            "id": int(jobid),
+            "start": int(pidstart),
+            "end": int(pidend)
+        }
+        global_backend.jobs.append(job)
+        return json.dumps({"status": "success"})
+    except: return json.dumps({"status": "false"})

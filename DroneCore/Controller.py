@@ -138,8 +138,9 @@ class Controller(threading.Thread):
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
-            if data is not b'ACK':
+            if data != b'ACK':
                 raise DroneNotArmedException()              # Command failed
+            else: return
         if data == b'ERROR':
             raise CommandNotExectuedException()         # Command failed
         if data == b'STATE_ERROR':
@@ -281,6 +282,11 @@ class Controller(threading.Thread):
             exit(0, 0)
 
     def close(self):
+        url = "http://" + self.ip + ":8082/removeDrone/" + str(self.id)
+        try:
+            data = json.loads(requests.get(url).text)
+            if data["result"] != "true": self.logger.warn("Drone not correctly removed from backend.")
+        except: self.logger.warn("Drone lost connection with database, not removed from backend.")
         self.running = False
         if self.mqtt:
             self.mqtt.disconnect()

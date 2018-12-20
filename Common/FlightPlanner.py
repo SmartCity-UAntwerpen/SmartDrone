@@ -3,8 +3,6 @@ import networkx as nx
 from networkx import NetworkXNoPath
 from Common.Marker import Marker
 
-from Common.DBConnection import DBConnection
-
 
 def distance(m1, m2):
     """

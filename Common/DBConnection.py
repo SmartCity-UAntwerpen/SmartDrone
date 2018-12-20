@@ -56,29 +56,58 @@ class DBConnection:
         # run any command on the database
 
         try:
+            print(sql)
             with self.db.cursor() as cursor:
                 cursor.execute(sql)
             self.db.commit()
             return cursor.fetchall()
         except:
-            return "Invalid Query"
+            return None
 
-    def add_drone(self, id, location):
-        """
-        Adds a drone to the database
-        :param id: id of drone
-        :param location: location of drone
-        """
-        cursor = self.db.cursor()
+    def load_drones(self):
+        drones = {}
+        ids = {}
+        try:
+            for drone in self.query("select * from drones.drones"):
+                ids[int(drone[2])] = drone[1]
+                drones[drone[1]] = (drone[3], drone[4], drone[5])
+        except Exception: pass
+        return drones, ids
+
+    def add_drone(self, id, unique_msg, location):
         x = location[0]
         y = location[1]
         z = location[2]
-        query = "insert into drone(droneid, x,y,z) values(" + str(id) + "," + str(x) + "," + str(y) + "," + str(z) + ")"
-        cursor.execute(query)
+        try:
+            self.query("insert into drones.drones(droneid, unique_msg, x,y,z) " +
+                       "values(%d, %s, %d, %d, %d)" % (id, unique_msg, x, y, z))
+        except Exception: pass
+
+    def get_location(self, drone_id):
+        location = (0,0,0)
+        try:
+            result = self.query("select x,y,z from drones.drones where droneID=%d" % drone_id)
+            location = result[0]
+        except Exception: pass
+        return location
+
+    def update_drone(self, id, location):
+        x = location[0]
+        y = location[1]
+        z = location[2]
+        try:
+            query = "update drones.drones set x=%d, y=%d, z=%d where droneID=%d" % (x, y, z, id)
+            self.query(query)
+        except Exception: pass
+
+    def remove_drone(self, drone_id, unique_msg):
+        try:
+            self.query("delete from drones.drones where droneID=%d and unique_msg=%s" % (drone_id, unique_msg))
+        except Exception: pass
 
     def get_markers(self):
         markers = {}
-        for m in self.query("select * from points"):
+        for m in self.query("select * from drones.points"):
             marker = Marker.Marker(m[2], m[3], m[4], m[1])
             markers[m[1]] = marker
         return markers
