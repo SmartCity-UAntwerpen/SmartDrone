@@ -31,10 +31,10 @@ class Backend():
         self.port = port
 
         # Connect to database
-        #db = db_connection.DBConnection()
-        #self.markers = db.get_markers()
+        db = db_connection.DBConnection()
+        self.markers = db.get_markers()
 
-        self.markers = temp_markers
+        #self.markers = temp_markers
 
         # Setup MQTT here
         self.base_mqtt_topic = base_mqtt_topic
@@ -114,7 +114,7 @@ class Backend():
 
 def start_backend():
     global backend
-    backend = Backend("127.0.0.1", 8082, base_topic)
+    backend = Backend("0.0.0.0", 8082, base_topic)
     REST.RestApi(backend)
 
     # TODO: add nodes from database
