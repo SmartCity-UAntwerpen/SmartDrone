@@ -204,6 +204,7 @@ class DroneFlightCommander:
 
                 elif command["command"] == "center":
                     marker = self.drone.ArucoNav.Center()
+                    self.logger.error(marker)
                     if marker is None:
                         self.drone.mc.land()
                         conn.send(b'ABORT')
@@ -226,6 +227,7 @@ class DroneFlightCommander:
                 self.logger.error("Received wrong command message (no JSON).")
             else:
                 self.logger.error("Command aborted.")
+                self.logger.error(e)
                 conn.send(b'ABORT')
 
     def wait_for_arm(self,timeout):
