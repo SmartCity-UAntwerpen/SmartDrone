@@ -65,7 +65,7 @@ class Controller(threading.Thread):
         self.port = port
 
     def start_controller(self):
-        self.logger.info("Start_controller")
+        self.logger.info("Start controller.")
         # subscribe to backend
         try:
             mac = get_mac()
@@ -91,7 +91,7 @@ class Controller(threading.Thread):
             url = "http://" + self.ip + ":8082/getMarkers/"
             markers = json.loads(requests.get(url).text)
             self.flight_planner.update_markers(markers["markers"])
-            self.logger.info("Markers updated")
+            self.logger.info("Markers updated.")
         except Exception as e:
             self.logger.error("Connection with backend failed.")
             self.logger.exception(e)
@@ -175,7 +175,7 @@ class Controller(threading.Thread):
                     self.jobs.append(data)
                 except KeyError:
                     self.logger.exception("%s", KeyError)
-                    self.logger.warn("Recieved incomplete job data.")
+                    self.logger.warn("Received incomplete job data.")
 
         except ValueError:
             self.logger.warn("Received new mqtt message on unique topic, message is not in JSON format.")
@@ -240,7 +240,7 @@ class Controller(threading.Thread):
                         self.logger.error("Command not executed. Wrong state. Retrying %d..." % counter)
 
             if not executed:
-                self.logger.error("command not executed")
+                self.logger.error("Command not executed.")
                 raise AbortException()
         self.executing_flight_plan = False
 
@@ -299,7 +299,7 @@ class Controller(threading.Thread):
             exit(0, 0)
 
     def close(self):
-        self.logger.info("Closing controller")
+        self.logger.info("Closing controller.")
         self.running = False
         if self.mqtt:
             self.mqtt.disconnect()
