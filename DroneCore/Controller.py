@@ -65,10 +65,12 @@ class Controller(threading.Thread):
         self.port = port
 
     def start_controller(self):
+        self.logger.info("Start_controller")
         # subscribe to backend
         try:
             mac = get_mac()
             url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
+            self.logger.info("Received markers form %s" % url)
 
             data = json.loads(requests.get(url).text)
             self.id = data["id"]
@@ -83,18 +85,19 @@ class Controller(threading.Thread):
 
             self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"]))
             self.logger.info("Subscribed to %s MQTT topic." % (data["mqtt_topic"] + "/" + str(self.id)))
-
             self.logger.info("Succesfully subscribed to the backend. Recieved id: %d" % self.id)
 
             # succesfully subscribed to backend, update markers
             url = "http://" + self.ip + ":8082/getMarkers/"
             markers = json.loads(requests.get(url).text)
             self.flight_planner.update_markers(markers["markers"])
+            self.logger.info("Markers updated")
         except Exception as e:
             self.logger.error("Connection with backend failed.")
+            self.logger.exception(e)
             return False
 
-        # connect with exection process
+        # connect with execution process
         connected = False
         counter = 0
         while not connected and counter < 10:
@@ -112,7 +115,9 @@ class Controller(threading.Thread):
                     self.logger.warn("Connection to exectution process refused. Retrying...")
                     counter += 1
                     time.sleep(2)
-                else: break
+                else:
+                    self.logger.exception(error)
+                    break
 
         if not connected:
             self.logger.error("Connection with execution process not established. Shutting down.")
@@ -127,17 +132,22 @@ class Controller(threading.Thread):
             "id": self.current_marker_id
         }
         try: controller.send_command(json.dumps(initialze_command))
-        except CommandNotExectuedException: self.logger.warn("Position not initialized correct, initialze command failed.")
+        except CommandNotExectuedException:
+            self.logger.warn("Position not initialized correct, initialze command failed.")
+            self.logger.exception(CommandNotExectuedException)
         self.start()
         return True # controller successfully started
 
     def send_command(self, data):
+        self.logger.info("send_command %s", data)
         self.command_socket.send(data.encode())
         data = self.command_socket.recv(2048)
+        self.logger.info("Received data %s", data.decode())
 
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
+            self.logger.info("Received data %s", data.decode())
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
@@ -164,6 +174,7 @@ class Controller(threading.Thread):
                     self.logger.info("Received job from marker %d to %d." % (data["point1"], data["point2"]))
                     self.jobs.append(data)
                 except KeyError:
+                    self.logger.exception("%s", KeyError)
                     self.logger.warn("Recieved incomplete job data.")
 
         except ValueError:
@@ -180,6 +191,7 @@ class Controller(threading.Thread):
                 "action": "position_update",
                 "position": data["position"]
             }
+            self.logger.info("%s", res)
             self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
         except ValueError: self.logger.error("Position result was not in the correct format (no JSON).")
 
@@ -214,6 +226,7 @@ class Controller(threading.Thread):
                     self.send_command(json.dumps(command))
                     executed = True
                 except Exception as e:
+                    self.logger.exception(e)
                     counter += 1
                     if type(e) == AbortException:
                         self.logger.error("Drone aborted command. Stopping executing job.")
@@ -226,7 +239,9 @@ class Controller(threading.Thread):
                     if type(e) == StateException:
                         self.logger.error("Command not executed. Wrong state. Retrying %d..." % counter)
 
-            if not executed: raise AbortException()
+            if not executed:
+                self.logger.error("command not executed")
+                raise AbortException()
         self.executing_flight_plan = False
 
     def fly_from_to(self, point1, point2):
@@ -243,8 +258,9 @@ class Controller(threading.Thread):
         self.execute_flight_plan(plan)
         self.current_marker_id = point2
 
-    def execute_job(self,job):
+    def execute_job(self, job):
         try:
+            # TODO add planed job
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
                 if self.current_marker_id != job["point2"]:
@@ -256,12 +272,13 @@ class Controller(threading.Thread):
 
                         self.fly_from_to(job["point1"], job["point2"])
                     except Exception as e:
+                        self.logger.exception(e)
                         if type(e) == AbortException:
                             self.logger.error("Job execution aborted.")
                             #self.jobs.append(job)
-                            # inform backend
+                            # TODO inform backend when job is aborted
                         else:
-                            self.logger.warn("Job failed. Exception: %s" % str(e))
+                            self.logger.warn("Job failed.")
                 else:
                     self.logger.info("Already at point2.")
         except KeyError:
@@ -277,10 +294,12 @@ class Controller(threading.Thread):
                     job = self.jobs.pop(0)
                     self.execute_job(job)
                 time.sleep(0.1)
-        except Exception:
+        except Exception as e:
+            self.logger.exception(e)
             exit(0, 0)
 
     def close(self):
+        self.logger.info("Closing controller")
         self.running = False
         if self.mqtt:
             self.mqtt.disconnect()
@@ -300,7 +319,8 @@ def exit(signal, frame):
         controller.join()
     try:
         sys.exit(0)
-    except: pass
+    except Exception as e:
+        print(e)
 
 
 if __name__ == '__main__':
