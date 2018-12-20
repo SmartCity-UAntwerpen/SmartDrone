@@ -147,7 +147,7 @@ class Controller(threading.Thread):
         if data == b'NOT_ARMED':
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
-            self.logger.log(15,"Received data %s", data.decode())
+            self.logger.log(15, "Received data %s", data.decode())
             if data is not b'ACK':
                 raise DroneNotArmedException()              # Command failed
         if data == b'ERROR':
