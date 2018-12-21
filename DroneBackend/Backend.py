@@ -66,6 +66,7 @@ class Backend():
         self.logger.info("Backend started.")
 
     def add_drone(self, unique_msg):
+        self.logger.info("Add_drone %s." % unique_msg)
         if unique_msg in self.ids.keys():
             new_drone_id = self.ids[unique_msg]
             location = self.db.get_location(new_drone_id)
@@ -93,6 +94,7 @@ class Backend():
         return len(self.ids)
 
     def remove_drone(self, drone_id):
+        self.logger.info("Remove drone %s." %drone_id)
         drone_id = int(drone_id)
         if drone_id in self.drones.keys():
             del self.drones[drone_id]
@@ -106,7 +108,7 @@ class Backend():
 
     def mqtt_callback(self, mosq, obj, msg):
         data = json.loads(msg.payload.decode())
-
+        self.logger.log(15, data)
         if data["action"] is None or data["id"] is None:
             self.logger.warn("Received uncomplete JSON message (no id or action field).")
             return
