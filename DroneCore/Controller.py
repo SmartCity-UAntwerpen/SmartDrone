@@ -8,7 +8,7 @@ import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
-from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException
 
 
 class DroneStatusEnum(enum.Enum):
@@ -94,7 +94,6 @@ class Controller(threading.Thread):
             self.logger.info("Markers updated.")
         except Exception as e:
             self.logger.error("Connection with backend failed.")
-            self.logger.exception(e)
             return False
 
         # connect with execution process
@@ -134,13 +133,12 @@ class Controller(threading.Thread):
         try: controller.send_command(json.dumps(initialze_command))
         except CommandNotExectuedException:
             self.logger.warn("Position not initialized correct, initialze command failed.")
-            self.logger.exception(CommandNotExectuedException)
         self.start()
         return True # controller successfully started
 
-    def send_command(self, data):
-        self.logger.log(15,"send_command %s", data)
-        self.command_socket.send(data.encode())
+    def send_command(self, command):
+        self.logger.log(15,"send_command %s", command)
+        self.command_socket.send(command.encode())
         data = self.command_socket.recv(2048)
         self.logger.log(15,"Received data %s", data.decode())
 
@@ -148,8 +146,9 @@ class Controller(threading.Thread):
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
             self.logger.log(15, "Received data %s", data.decode())
-            if data is not b'ACK':
-                raise DroneNotArmedException()              # Command failed
+            if data != b'ACK':
+                raise DroneNotArmedException()          # Command failed
+            raise JustArmedException()
         if data == b'ERROR':
             raise CommandNotExectuedException()         # Command failed
         if data == b'STATE_ERROR':
@@ -174,7 +173,6 @@ class Controller(threading.Thread):
                     self.logger.info("Received job from marker %d to %d." % (data["point1"], data["point2"]))
                     self.jobs.append(data)
                 except KeyError:
-                    self.logger.exception("%s", KeyError)
                     self.logger.warn("Received incomplete job data.")
 
         except ValueError:
@@ -226,7 +224,6 @@ class Controller(threading.Thread):
                     self.send_command(json.dumps(command))
                     executed = True
                 except Exception as e:
-                    self.logger.exception(e)
                     counter += 1
                     if type(e) == AbortException:
                         self.logger.error("Drone aborted command. Stopping executing job.")
@@ -238,6 +235,8 @@ class Controller(threading.Thread):
                         self.logger.error("Command not executed. Retrying %d..." % counter)
                     if type(e) == StateException:
                         self.logger.error("Command not executed. Wrong state. Retrying %d..." % counter)
+                    if type(e) == JustArmedException:
+                        self.logger.info("Drone just armed.")
 
             if not executed:
                 self.logger.error("Command not executed.")
@@ -271,7 +270,6 @@ class Controller(threading.Thread):
 
                         self.fly_from_to(job["point1"], job["point2"])
                     except Exception as e:
-                        self.logger.exception(e)
                         if type(e) == AbortException:
                             self.logger.error("Job execution aborted.")
                             #self.jobs.append(job)
