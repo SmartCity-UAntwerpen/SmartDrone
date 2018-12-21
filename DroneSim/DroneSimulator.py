@@ -39,10 +39,8 @@ class DroneFlightCommander:
                     self.markers[int(marker)] = m
                 self.drone.black_box.info("Received marker update.")
         except ValueError:
-            self.drone.black_box.exception(ValueError)
             self.drone.black_box.error("Received non json message, dropping message.")
         except KeyError:
-            self.drone.black_box.exception(KeyError)
             self.drone.black_box.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
@@ -62,7 +60,6 @@ class DroneFlightCommander:
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
         except ValueError:
-            self.drone.black_box.exception(ValueError)
             self.drone.black_box.error("Received non json message, dropping message.")
 
     boundries = {
@@ -82,7 +79,6 @@ class DroneFlightCommander:
                     self.drone.black_box.warn("Values not valid.")
                     return False
             except KeyError:
-                self.drone.black_box.exception(KeyError)
                 return False
         return True
 
@@ -222,7 +218,6 @@ class DroneFlightCommander:
             conn.send(b'STATE_ERROR')
             return
         except Exception as e:
-            self.drone.black_box.exception(e)
             if type(e) == ValueError:
                 self.drone.black_box.error("Received wrong command message (no JSON).")
             else:

@@ -10,3 +10,6 @@ class StateException(Exception):
 
 class AbortException(Exception):
     pass
+
+class JustArmedException(Exception):
+    pass
