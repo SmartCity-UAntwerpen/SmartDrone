@@ -18,8 +18,9 @@ if __name__ == "__main__":
 
     if args.sim:
         # start a simulated drone
-        executing_process = Popen(["python", "DroneSim/DroneSimulator.py", str(port)])
-        communicating_process = Popen(["python", "DroneCore/Controller.py", str(port), str(marker), str(ip)])
+        print(sys.path[0])
+        executing_process = Popen(["python", "DroneSimulator.py", str(port)], cwd=sys.path[0]+"/DroneSim")
+        communicating_process = Popen(["python", "Controller.py", str(port), str(marker), str(ip)],cwd=sys.path[0]+"/DroneCore")
 
         running = True
         try:
