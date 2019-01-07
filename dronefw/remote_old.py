@@ -21,10 +21,16 @@ while (True):
 
         #Flight commands
         if (Drone.DroneStatus != DroneStatusEnum.Flying):
-            if (Drone.Gamepad.Start==1):
+            if (Drone.Gamepad.Start==1 and Drone.DroneStatus==DroneStatusEnum.Idle):
                 print ("Arm")
                 Drone.Arm()
                 Drone.mc.TakeOff(0.3, 0.4)
+            elif (Drone.DroneStatus==DroneStatusEnum.EmergencyLowBattery or
+                  Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadLoss or
+                  Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadStop or
+                  Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadLand):
+                Drone.ClearEmergency()
+
         if (Drone.DroneStatus == DroneStatusEnum.Flying):
             if (Drone.Gamepad.DpadUp==1):
                 Drone.mc.Forward(0.2, velocity=0.5)

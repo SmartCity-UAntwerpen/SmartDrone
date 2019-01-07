@@ -222,6 +222,16 @@ class DroneClass:
         self.cf.param.set_value('safety.estop', '0')
         self.DroneStatus=DroneStatusEnum.Armed
 
+    def ClearEmergency(self):
+        """
+        Resets drone back to idle status from emergency status
+        """
+        if (self.DroneStatus==DroneStatusEnum.EmergencyLowBattery or
+                self.DroneStatus==DroneStatusEnum.EmergencyGamepadLoss or
+                self.DroneStatus==DroneStatusEnum.EmergencyGamepadLand or
+                self.DroneStatus==DroneStatusEnum.EmergencyGamepadStop):
+            self.DroneStatus=DroneStatusEnum.Idle
+
     def _GamepadCallback(self):
         #Left button 1: autoland
         if (self.Gamepad.L1):
