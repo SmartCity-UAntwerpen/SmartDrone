@@ -57,11 +57,12 @@ def get_markers():
 def calculate_cost(pidstart, pidend):
     global global_backend
     try: cost = global_backend.flightplanner.calculate_cost(int(pidstart), int(pidend))
+    # bad fix but backbone could not handle -1 or floating poitns
     except: cost = 9999999
-    return json.dumps({ "cost": cost })
+    return json.dumps({ "cost": int(cost) })
 
 
-@app.route('/job/execute/<pidstart>/<pidend>/<jobid>')
+@app.route('/job/execute/<pidstart>/<pidend>/<jobid>', methods=['POST', 'GET'])
 def add_job(pidstart, pidend, jobid):
     try:
         global global_backend
@@ -77,7 +78,7 @@ def add_job(pidstart, pidend, jobid):
 
 
 @app.route('/job/getprogress/<job_id>')
-def calculate_cost(job_id):
+def get_progress(job_id):
     global global_backend
     if int(job_id) in global_backend.jobs.keys():
         progress = 0

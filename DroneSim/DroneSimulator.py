@@ -59,6 +59,12 @@ class DroneFlightCommander:
             data = json.loads(data)
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
+            elif data["action"] == "wait_for_idle":
+                result = "true"
+                if self.drone.status is not Drone.DroneStatusEnum.Idle:
+                    self.drone.black_box.info("Type 'reset' to reset the drone status to idle")
+                    if not self.wait_for_idle(): result = "false"
+                sock.send(json.dumps({"result": result }).encode())
         except ValueError:
             self.drone.black_box.error("Received non json message, dropping message.")
 
@@ -223,10 +229,17 @@ class DroneFlightCommander:
             else:
                 self.drone.black_box.error("Command aborted.")
 
+    def wait_for_idle(self):
+        if input("").lower() == "reset":
+            self.drone.status = Drone.DroneStatusEnum.Idle
+            return True
+        return False
+
     def wait_for_arm(self):
         if input("").lower() == "arm":
             self.drone.arm()
             return True
+        self.drone.status = Drone.DroneStatusEnum.EmergencyGamepadStop
         return False
 
     def close(self):

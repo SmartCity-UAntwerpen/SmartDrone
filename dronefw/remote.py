@@ -39,7 +39,6 @@ class DroneFlightCommander:
         else:
             self.running = False
 
-
     def handle_status_update(self, sock, data):
         try:
             data = data.decode()
@@ -78,6 +77,11 @@ class DroneFlightCommander:
             data = json.loads(data)
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
+            elif data["action"] == "wait_for_idle":
+                result = "true"
+                if self.drone.DroneStatus is not Drone.DroneStatusEnum.Idle:
+                    if not self.wait_for_idle(120): result = "false"
+                sock.send(json.dumps({"result": result }).encode())
         except ValueError:
             self.logger.exception(ValueError)
             self.logger.error("Received non json message, dropping message.")
@@ -245,6 +249,21 @@ class DroneFlightCommander:
             else:
                 self.logger.error("Command aborted.")
                 conn.send(b'ABORT')
+
+    def wait_for_idle(self,timeout):
+        sleep_time = 0.1
+        counter = 0
+        self.logger.info("Wait for idle.")
+        while self.running and counter <= timeout:
+            if self.drone.Gamepad.Start == 1:
+                self.drone.Arm()
+                self.logger.info("Drone state set to idle.")
+                return True
+            counter += sleep_time
+            time.sleep(sleep_time)
+
+        self.logger.error("Timeout drone not set in idle state.")
+        return False
 
     def wait_for_arm(self,timeout):
         sleep_time = 0.1
