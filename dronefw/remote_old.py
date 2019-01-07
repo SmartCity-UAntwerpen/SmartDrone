@@ -25,10 +25,10 @@ while (True):
                 print ("Arm")
                 Drone.Arm()
                 Drone.mc.TakeOff(0.3, 0.4)
-            elif (Drone.DroneStatus==DroneStatusEnum.EmergencyLowBattery or
+            elif (Drone.Gamepad.Start==1 and (Drone.DroneStatus==DroneStatusEnum.EmergencyLowBattery or
                   Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadLoss or
                   Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadStop or
-                  Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadLand):
+                  Drone.DroneStatus==DroneStatusEnum.EmergencyGamepadLand)):
                 Drone.ClearEmergency()
 
         if (Drone.DroneStatus == DroneStatusEnum.Flying):
