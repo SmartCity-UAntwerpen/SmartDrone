@@ -50,7 +50,7 @@ class DBConnection:
     def query(self, sql):
         """
         Make a query to the database
-        :param sql: the query
+        :param: sql: the query
         :return: the answer from the database if the query was valid, "invalid query" otherwise
         """
         # run any command on the database
@@ -70,7 +70,7 @@ class DBConnection:
             for drone in self.query("select * from drones.drones"):
                 ids[int(drone[2])] = drone[1]
                 drones[drone[1]] = (drone[3], drone[4], drone[5])
-        except Exception: pass
+        except Exception as e: print(e)
         return drones, ids
 
     def add_drone(self, id, unique_msg, location):
@@ -80,29 +80,61 @@ class DBConnection:
         try:
             self.query("insert into drones.drones(droneid, unique_msg, x,y,z) " +
                        "values(%d, %s, %d, %d, %d)" % (id, unique_msg, x, y, z))
-        except Exception: pass
+        except Exception as e: print(e)
 
     def get_location(self, drone_id):
         location = (0,0,0)
         try:
             result = self.query("select x,y,z from drones.drones where droneID=%d" % drone_id)
             location = result[0]
-        except Exception: pass
+        except Exception as e: print(e)
         return location
 
     def update_drone(self, id, location):
-        x = location[0]
-        y = location[1]
-        z = location[2]
+        x = float(location[0])
+        y = float(location[1])
+        z = float(location[2])
         try:
             query = "update drones.drones set x=%d, y=%d, z=%d where droneID=%d" % (x, y, z, id)
             self.query(query)
-        except Exception: pass
+        except Exception as e: print(e)
 
     def remove_drone(self, drone_id, unique_msg):
         try:
             self.query("delete from drones.drones where droneID=%d and unique_msg=%s" % (drone_id, unique_msg))
-        except Exception: pass
+        except Exception as e: print(e)
+
+    def add_job(self, job):
+        try:
+            query = "insert into drones.jobs(droneID, active, start, stop, job_id) VALUES(%d, %d, %d, %d, %d)" % \
+                    (-1, False,job["point1"], job["point2"], job["job_id"])
+            self.query(query)
+        except Exception as e: print(e)
+
+    def delete_job(self, job_id):
+        try:
+            query = "delete from drones.jobs where job_id=%d" % job_id
+            self.query(query)
+        except Exception as e: print(e)
+
+    def load_jobs(self):
+        jobs = {}
+        active_jobs = {}
+        active_drones = []
+        try:
+            for job in self.query("select * from drones.jobs"):
+                loaded_job = {
+                    "point1": job[3],
+                    "point2": job[4],
+                    "job_id": job[5]
+                }
+                if int(job[2]) == 0:
+                    jobs[int(job[5])] = loaded_job       # job not active, add job to job queue
+                else:
+                    active_drones.append(job[1])
+                    active_jobs[int(job[5])] = loaded_job
+        except Exception as e: print(e)
+        return jobs, active_jobs, active_drones
 
     def get_markers(self):
         markers = {}

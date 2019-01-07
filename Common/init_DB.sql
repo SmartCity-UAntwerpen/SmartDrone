@@ -3,7 +3,7 @@ create database drones;
 use drones;
 create table points(
   id int(11) unsigned auto_increment primary key not null,
-  pointID int(16) not null,
+  pointID int(8) not null,
   x float not null,
   y float not null,
   z float not null
@@ -24,3 +24,12 @@ create table drones(
   y float not null,
   z float not null
 );
+
+create table jobs (
+  id int(11) unsigned auto_increment primary key not null,
+  droneID int(11) not null,
+  active boolean not null,
+  start int(8) not null,
+  stop int(8) not null,
+  job_id int(16) not null
+)

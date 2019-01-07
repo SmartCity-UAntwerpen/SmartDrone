@@ -71,5 +71,18 @@ def add_job(pidstart, pidend, jobid):
             "job_id": int(jobid)
         }
         global_backend.jobs[int(jobid)] = job
+        global_backend.db.add_job(job)
         return json.dumps({"status": "success"})
     except: return json.dumps({"status": "false"})
+
+
+@app.route('/job/getprogress/<job_id>')
+def calculate_cost(job_id):
+    global global_backend
+    if int(job_id) in global_backend.jobs.keys():
+        progress = 0
+    elif int(job_id) in global_backend.active_jobs.keys():
+        progress = 0.5
+    else:
+        progress = 1
+    return json.dumps({ "progress": progress })

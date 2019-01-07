@@ -64,6 +64,7 @@ class Backend():
         self.mqtt.loop_start()
 
         self.drones, self.ids = self.db.load_drones()
+        self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
         self.logger.info("Backend started.")
 
     def add_drone(self, unique_msg):
@@ -131,13 +132,13 @@ class Backend():
             elif data["action"] == "job_complete":
                 drone_id = data["id"]
                 if int(drone_id) in self.active_drones:
-                    self.logger.info("Drone with id: %d completed its job: with status: %s", (int(drone_id), data["status"]))
+                    self.logger.info("Drone with id: %d completed its job: with status: %s" % (int(drone_id), str(data["status"])))
                     self.active_drones.remove(int(drone_id))
                     job = self.active_jobs[int(drone_id)]
                     del self.active_jobs[int(drone_id)]
                     # INFORM BACKBONE
                     url = backbone_url + "/job/complete/" + str(job["job_id"])
-                    try: requests.post(url)
+                    try: requests.post(url, timeout=2)
                     except: self.logger.warn("Job status complete send to backbone failed")
         except KeyError:
             self.logger.warn(
