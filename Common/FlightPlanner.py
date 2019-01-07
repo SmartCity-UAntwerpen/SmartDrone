@@ -87,6 +87,12 @@ class FlightPlanner:
         }
         flight_plan["commands"].append(takeoff)
 
+        command = {
+            "command": "center",
+            "id": m1.id,  # for simulator
+        }
+        flight_plan["commands"].append(command)
+
         # fly to target
         for index in range(0, len(path) - 1):
             delta_x = path[index + 1].x - path[index].x

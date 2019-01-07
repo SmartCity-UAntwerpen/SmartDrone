@@ -224,7 +224,7 @@ class DroneFlightCommander:
                     else:
                         # TODO check if marker is the correct marker and handle the exceptions.
                         if self.markers is not None:
-                            marker = self.markers[marker.id]
+                            marker = self.markers[marker.Id]
                             self.px = marker.x
                             self.py = marker.y
                             self.pz = marker.z
