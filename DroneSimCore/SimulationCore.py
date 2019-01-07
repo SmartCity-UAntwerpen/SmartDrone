@@ -1,6 +1,5 @@
 import argparse, time
-import _thread as thread
-from subprocess import Popen
+import subprocess
 from Common.SocketCallback import SocketCallback
 
 drones = {}
@@ -12,51 +11,40 @@ def create(id):
     if id in drones:
         return b'NACK'
     else:
-        # dictionary key (drone id_ value( marker, running)
-        drones[id] = (-1, True)
+        # dictionary key (drone id_ value( marker, process)
+        drones[id] = [-1, None]
         return b'ACK'
 
-
-def start_drone(id):
-    if id in drones:
-        start_marker_id = drones[id][0]
-        if start_marker_id == -1 or start_marker_id is None:
-            start_marker_id = 0
-        id = int(id)
-        simport = 5000 + id * 2
-        process = Popen(
-            ["python", "../start_drone.py", "-s", "-p", str(simport), "-m", str(start_marker_id), "-b", backendIP])
-        running = True
-        try:
-            while running:
-                running = drones[str(id)][1]
-                print(running)
-                if process.poll() is not None:
-                    running = False
-                time.sleep(1)
-        except KeyboardInterrupt:
-            running = False
-        print("process stopped.")
-        process.terminate()
-        # TODO process stops but threads keep running
 
 def run(id):
     # start simulated.
     print("Run drone.")
-    try:
-        thread.start_new_thread(start_drone, (id,))
-        return b'ACK'
-    except Exception as e:
-        print(e)
-        return b'NACK'
+    start_marker_id = drones[id][0]
+    if start_marker_id == -1 or start_marker_id is None:
+        drones[id][0] = 0
+    intID = int(id)
+    simport = 5000 + intID * 2
+    process = subprocess.Popen(
+        ["python", "../start_drone.py", "-s", "-p", str(simport), "-m", str(start_marker_id), "-b", backendIP])
+    drones[id][1] = process
 
 
 def stop(id):
     print("Stop drone.")
     # stop simulated
     if id in drones:
-        marker_id = drones[id][0]
-        drones[id] = (marker_id, False)
+        process = drones[id][1]
+        if process is None:
+            print("no process to kill")
+            return b'NACK'
+        else:
+            try:
+                #TODO process does not kill
+                # kill does not work
+                # terminate does not work
+                process.terminate()
+            except:
+                return b'NACK'
         return b'ACK'
     else:
         return b'NACK'
@@ -78,8 +66,9 @@ def restart(id):
 
 
 def set_startpoint(id, startpoint):
+    print("set_startpoint")
     if id in drones:
-        drones[id] = (startpoint, True)
+        drones[id][0] = startpoint if type(startpoint) is 'int' else 0
         return b'ACK'
     else:
         return b'NACK'
@@ -129,10 +118,12 @@ if __name__ == "__main__":
     command_socket.add_callback(handle_command)
     command_socket.start()
 
+    """
     # for testing without socket
     print("simulationCore started")
     test("create 3")
     test("run 3")
     time.sleep(10)
     test("stop 3")
-    print(drones)
+    print("program done")
+    """
