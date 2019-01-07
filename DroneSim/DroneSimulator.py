@@ -239,7 +239,7 @@ class DroneFlightCommander:
         if input("").lower() == "arm":
             self.drone.arm()
             return True
-        self.drone.status = Drone.DroneStatusEnum.EmergencyGamepadStop
+        self.drone.status = Drone.DroneStatusEnum.EmergencyGamepadStop      # example, remove is not necessary
         return False
 
     def close(self):
