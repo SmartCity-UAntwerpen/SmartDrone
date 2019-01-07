@@ -70,7 +70,6 @@ class Controller(threading.Thread):
         try:
             mac = get_mac()
             url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
-            self.logger.info("Received markers form %s" % url)
 
             data = json.loads(requests.get(url).text)
             self.id = data["id"]
@@ -91,6 +90,7 @@ class Controller(threading.Thread):
             url = "http://" + self.ip + ":8082/getMarkers/"
             markers = json.loads(requests.get(url).text)
             self.flight_planner.update_markers(markers["markers"])
+            self.logger.info("Received markers form %s" % url)
             self.logger.info("Markers updated.")
         except Exception as e:
             self.logger.error("Connection with backend failed.")
@@ -146,9 +146,9 @@ class Controller(threading.Thread):
             self.logger.info("Drone not armed, waiting for arm...")
             data = self.command_socket.recv(2048)
             self.logger.log(15, "Received data %s", data.decode())
-            if data != b'ACK':
-                raise DroneNotArmedException()          # Command failed
-            raise JustArmedException()
+            if data == b'ACK':
+                raise JustArmedException()              # Command failed
+            else: raise AbortException()
         if data == b'ERROR':
             raise CommandNotExectuedException()         # Command failed
         if data == b'STATE_ERROR':
@@ -281,7 +281,6 @@ class Controller(threading.Thread):
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
 
-
     def run(self):
         try:
             # Polling loop, sleep 1 s each time
@@ -290,6 +289,12 @@ class Controller(threading.Thread):
                     # get the first job
                     job = self.jobs.pop(0)
                     self.execute_job(job)
+                    message = {
+                        "action": "job_complete",
+                        "id": self.id,
+                        "status": "complete"
+                    }
+                    self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
                 time.sleep(0.1)
         except Exception as e:
             self.logger.exception(e)

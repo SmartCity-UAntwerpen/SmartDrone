@@ -57,7 +57,7 @@ def get_markers():
 def calculate_cost(pidstart, pidend):
     global global_backend
     try: cost = global_backend.flightplanner.calculate_cost(int(pidstart), int(pidend))
-    except: cost = -1
+    except: cost = 9999999
     return json.dumps({ "cost": cost })
 
 
@@ -66,10 +66,10 @@ def add_job(pidstart, pidend, jobid):
     try:
         global global_backend
         job = {
-            "id": int(jobid),
-            "start": int(pidstart),
-            "end": int(pidend)
+            "point1": int(pidstart),
+            "point2": int(pidend),
+            "job_id": int(jobid)
         }
-        global_backend.jobs.append(job)
+        global_backend.jobs[int(jobid)] = job
         return json.dumps({"status": "success"})
     except: return json.dumps({"status": "false"})

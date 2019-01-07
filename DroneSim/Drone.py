@@ -220,7 +220,7 @@ class Drone:
         self.x += move_vector[0]
         self.y += move_vector[1]
         self.z += move_vector[2]
-        self.black_box.debug("New position: (%.2f, %.2f, %.2f) duration: %.2f s velocity: %.2f m/s"
+        self.black_box.info("New position: (%.2f, %.2f, %.2f) duration: %.2f s velocity: %.2f m/s"
                              % (self.x, self.y, self.z, flight_time, velocity))
         time.sleep(flight_time)
 

@@ -56,7 +56,6 @@ class DBConnection:
         # run any command on the database
 
         try:
-            print(sql)
             with self.db.cursor() as cursor:
                 cursor.execute(sql)
             self.db.commit()
