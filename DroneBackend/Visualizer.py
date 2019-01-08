@@ -76,7 +76,7 @@ class Visualizer:
         draw the markers on the screen
         :return: all the markers
         """
-        db = DBConnection()
+        db = DBConnection("smartcity.ddns.net", "smartcity")
         # x,y,z,transitpoint
         markers = db.get_markers()
 
