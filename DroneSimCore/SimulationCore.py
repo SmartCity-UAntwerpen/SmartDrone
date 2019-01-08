@@ -1,7 +1,7 @@
 import argparse, time
 import subprocess
 from Common.SocketCallback import SocketCallback
-import signal
+import signal,sys
 
 drones = {}
 
@@ -44,7 +44,11 @@ def stop(id):
             return b'NACK'
         else:
             try:
-                process.send_signal(signal.SIGINT)
+                if sys.platform == 'win32':
+                    # TODO fix windows
+                    print("cannot stop this program when running on windows")
+                else:
+                    process.send_signal(signal.SIGINT)
             except:
                 return b'NACK'
         return b'ACK'
@@ -85,22 +89,19 @@ def handle_command(sock, data):
         words = data.split()
         function_name = words[0]
         id = words[1]
-        func = globals()[function_name]
-
-        answer = func(id)
+        if id.isdigit():
+            func = globals()[function_name]
+            if len(words) == 2:
+                answer = func(id)
+            elif len(words) == 3:
+                answer = func(id, words[2])
+            else:
+                answer = b'NACK'
+        else:
+            answer = b'NACK'
         sock.send(answer)
     except:
         pass
-
-
-def test(data):
-    words = data.split()
-    function_name = words[0]
-    id = words[1]
-    func = globals()[function_name]
-
-    answer = func(id)
-    print(answer)
 
 
 if __name__ == "__main__":
@@ -118,17 +119,14 @@ if __name__ == "__main__":
     global ip
     ip = "localhost" if not args.ip else args.ip
 
-    #command_socket = SocketCallback(ip, port)
-    #command_socket.add_callback(handle_command)
-    #command_socket.start()
+    print("simulationCore started. Send TCP/ip packet at ", ip, ":", port)
+    print("create id: adds drone to the list")
+    print("run id: starts simulated drone")
+    print("stop id: stops simulated drone, works only on linux")
+    print("kill id: removes drone from the list")
+    print("set_startpoint id startpoint: change startpoint from drone")
 
-    # for testing without socket
-    print("simulationCore started")
-    test("create 6")
-    test("run 6")
-    time.sleep(10)
-    test("stop 6")
-    print("program done")
 
-    #command_socket.close()
-    #command_socket.join()
+    command_socket = SocketCallback(ip, port)
+    command_socket.add_callback(handle_command)
+    command_socket.start()
