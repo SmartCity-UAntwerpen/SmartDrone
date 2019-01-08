@@ -17,14 +17,14 @@ class SocketCallback(threading.Thread):
         pair = None
         while self.running:
             if pair:
-                sock, addr = pair
                 try:
+                    sock, addr = pair
                     data = sock.recv(2048)
                     if not data:
                         pair = None     # connection closed
                         continue
                     for callback in self.callbacks: callback(sock, data)
-                except TimeoutError: pass
+                except Exception: pass
             else:
                 try:
                     pair = self.s.accept()

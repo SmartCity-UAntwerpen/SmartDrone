@@ -108,7 +108,14 @@ def handle_command(sock, data):
         pass
 
 
+def exit(sign, num):
+    global running, command_socket
+    running = False
+    command_socket.close()
+    command_socket.join()
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, exit)
     parser = argparse.ArgumentParser()
     parser.add_argument("-b", "--backend", help="backend ip")
     parser.add_argument("-p", "--port", help="Define port of connection with simulation backend.")
@@ -133,3 +140,6 @@ if __name__ == "__main__":
     command_socket = SocketCallback(ip, port)
     command_socket.add_callback(handle_command)
     command_socket.start()
+
+    running = True
+    while running: time.sleep(1)
