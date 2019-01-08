@@ -3,7 +3,6 @@ import json, enum, requests
 import DroneBackend.BackendLogger as BackendLogger
 import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
-from Common.Marker import Marker
 from Common.FlightPlanner import FlightPlanner
 
 backbone_url = "http://172.16.0.139:10000"

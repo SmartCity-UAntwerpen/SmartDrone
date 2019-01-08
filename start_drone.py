@@ -3,13 +3,18 @@ import time, argparse, sys
 from subprocess import Popen
 import signal
 
-signal.signal(signal.SIGINT, exit)
-
 running = False
+executing_process = None
+communicating_process = None
 
 def exit(signal, frame):
-    global running
+    print("sig int")
+    global running, communicating_process, executing_process
+    if communicating_process.poll() is None: communicating_process.terminate()
+    if executing_process.poll() is None: executing_process.terminate()
     running = False
+
+signal.signal(signal.SIGINT, exit)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -60,5 +65,3 @@ if __name__ == "__main__":
                 time.sleep(1)
         except KeyboardInterrupt:
             running = False
-
-

@@ -271,15 +271,16 @@ class Controller(threading.Thread):
                         self.fly_from_to(job["point1"], job["point2"])
                     except Exception as e:
                         if type(e) == AbortException:
-                            self.logger.error("Job execution aborted.")
+                            message = {"action": "job_failed", "id": self.id}
+                            self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
+                            self.logger.info("Job was aborted, backend informed.")
+
                             message = {"action": "wait_for_idle"}
                             self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
                             data = json.loads(self.command_socket.recv(2048).decode())
                             if data["result"] == "false":
-                                # drone not in idle
-                                message = { "action": "job_failed", "id": self.id }
-                                self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
-                                self.logger.info("Job was aborted, drone not idle, backend informed.")
+                                # drone not in idle, shutdown drone
+                                exit(0,0)
                             else:
                                 # drone back in idle state, add job back in job queue
                                 # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker

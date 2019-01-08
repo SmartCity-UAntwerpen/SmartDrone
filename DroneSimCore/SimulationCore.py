@@ -1,11 +1,13 @@
 import argparse, time
 import subprocess
 from Common.SocketCallback import SocketCallback
+import signal
 
 drones = {}
 
 
 def create(id):
+    global drones
     print("Create drone.")
     # append id in list
     if id in drones:
@@ -17,11 +19,13 @@ def create(id):
 
 
 def run(id):
+    global drones
     # start simulated.
     print("Run drone.")
     start_marker_id = drones[id][0]
     if start_marker_id == -1 or start_marker_id is None:
         drones[id][0] = 0
+        start_marker_id = 0
     intID = int(id)
     simport = 5000 + intID * 2
     process = subprocess.Popen(
@@ -30,6 +34,7 @@ def run(id):
 
 
 def stop(id):
+    global drones
     print("Stop drone.")
     # stop simulated
     if id in drones:
@@ -39,8 +44,7 @@ def stop(id):
             return b'NACK'
         else:
             try:
-                # TODO process does not kill
-                process.kill()
+                process.send_signal(signal.SIGINT)
             except:
                 return b'NACK'
         return b'ACK'
@@ -49,6 +53,7 @@ def stop(id):
 
 
 def kill(id):
+    global drones
     print("Kill drone.")
     # remove id from list
     if id in drones:
@@ -64,6 +69,7 @@ def restart(id):
 
 
 def set_startpoint(id, startpoint):
+    global drones
     print("set_startpoint")
     if id in drones:
         drones[id][0] = startpoint if type(startpoint) is 'int' else 0
@@ -112,14 +118,17 @@ if __name__ == "__main__":
     global ip
     ip = "localhost" if not args.ip else args.ip
 
-    command_socket = SocketCallback(ip, port)
-    command_socket.add_callback(handle_command)
-    command_socket.start()
+    #command_socket = SocketCallback(ip, port)
+    #command_socket.add_callback(handle_command)
+    #command_socket.start()
 
     # for testing without socket
     print("simulationCore started")
-    test("create 3")
-    test("run 3")
+    test("create 6")
+    test("run 6")
     time.sleep(10)
-    test("stop 3")
+    test("stop 6")
     print("program done")
+
+    #command_socket.close()
+    #command_socket.join()
