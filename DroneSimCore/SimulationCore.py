@@ -39,10 +39,8 @@ def stop(id):
             return b'NACK'
         else:
             try:
-                #TODO process does not kill
-                # kill does not work
-                # terminate does not work
-                process.terminate()
+                # TODO process does not kill
+                process.kill()
             except:
                 return b'NACK'
         return b'ACK'
@@ -118,7 +116,6 @@ if __name__ == "__main__":
     command_socket.add_callback(handle_command)
     command_socket.start()
 
-    """
     # for testing without socket
     print("simulationCore started")
     test("create 3")
@@ -126,4 +123,3 @@ if __name__ == "__main__":
     time.sleep(10)
     test("stop 3")
     print("program done")
-    """
