@@ -225,5 +225,5 @@ class Backend():
 
 def start_backend():
     global backend
-    backend = Backend("0.0.0.0", 8082, base_topic)
+    backend = Backend("127.0.0.1", 8082, base_topic)
     REST.RestApi(backend)
