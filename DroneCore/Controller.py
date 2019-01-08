@@ -316,7 +316,7 @@ class Controller(threading.Thread):
         try:
             data = json.loads(requests.get(url).text)
             if data["result"] != "true": self.logger.warn("Drone not correctly removed from backend.")
-        except: self.logger.warn("Drone lost connection with database, not removed from backend.")
+        except: self.logger.warn("Drone lost connection with backend, not removed from backend.")
         self.logger.info("Closing controller.")
         self.running = False
         if self.mqtt:
@@ -330,9 +330,9 @@ class Controller(threading.Thread):
 
 
 def exit(signal, frame):
-    print("Controller closed.")
     global controller
     controller.close()
+    print("Controller closed.")
     if controller.isAlive():
         controller.join()
     try:

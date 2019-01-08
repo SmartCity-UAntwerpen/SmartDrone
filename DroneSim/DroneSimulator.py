@@ -3,7 +3,7 @@ import sys
 sys.path.append(sys.path[0] + "/..")
 
 import DroneSim.Drone as Drone
-import signal, json, time
+import signal, json, time, threading
 from Common.SocketCallback import SocketCallback
 from Common.Marker import Marker
 

@@ -1,20 +1,10 @@
 
 import time, argparse, sys
 from subprocess import Popen
-import signal
 
 running = False
 executing_process = None
 communicating_process = None
-
-def exit(signal, frame):
-    print("sig int")
-    global running, communicating_process, executing_process
-    if communicating_process.poll() is None: communicating_process.terminate()
-    if executing_process.poll() is None: executing_process.terminate()
-    running = False
-
-signal.signal(signal.SIGINT, exit)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

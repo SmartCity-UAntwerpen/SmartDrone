@@ -34,11 +34,12 @@ class DroneAliveChecker(threading.Thread):
         while self.running:
             if counter >= 10: # check if drones are alive every 10 seconds
                 self.backend.logger.info("Checking if drones are alive...")
-                for drone in list(self.backend.drones):
+                for drone in list(self.backend.drones.keys()):
                     if drone not in self.backend.alive_drones:
                         self.backend.logger.info(
                             "Drone with id %d, did not send status update, removing drone." % drone)
                         self.backend.remove_drone(drone)
+                self.backend.alive_drones.clear()
                 counter = 0
             counter += time_step
             time.sleep(time_step)
@@ -103,6 +104,7 @@ class Backend():
             self.drones[new_drone_id] = (0, 0, 0)
             self.db.add_drone(new_drone_id, str(unique_msg), (0, 0, 0))  # save unique_msg as string
             self.logger.info("New Drone connected: [id] %d, [unique_msg] %s" % (new_drone_id, unique_msg))
+        self.alive_drones.append(new_drone_id)
         reply = {
             "id": new_drone_id,
             "mqtt_topic": self.base_mqtt_topic,
@@ -122,13 +124,17 @@ class Backend():
         drone_id = int(drone_id)
         if drone_id in self.drones.keys():
             del self.drones[drone_id]
+            # check if drone had active job, remove when true
+            if drone_id in self.active_drones:
+                self.job_failed(drone_id)
+            # remove unique id from stored ids
             if drone_id in self.ids.values():
                 unique = list(self.ids.keys())[list(self.ids.values()).index(drone_id)]
                 del self.ids[unique]
                 self.db.remove_drone(drone_id, str(unique))
                 self.logger.info("Drone removed: [id] %d, [unique_msg] %s" % (drone_id, unique))
-                return {"result": "true"}
-        return {"result": "false"}
+                return True
+        return False
 
     def mqtt_callback(self, mosq, obj, msg):
         data = json.loads(msg.payload.decode())
@@ -153,29 +159,9 @@ class Backend():
                 if int(data["status"]) == DroneStatusEnum.Idle.value:
                     self.assign_job_to_drone(int(data["id"]))
             elif data["action"] == "job_complete":
-                drone_id = data["id"]
-                if int(drone_id) in self.active_drones:
-                    self.logger.info("Drone with id: %d COMPLETED its job" % (int(drone_id)))
-                    self.active_drones.remove(int(drone_id))
-                    job = self.active_jobs[int(drone_id)]
-                    # remove job from db
-                    self.db.remove_job(job["job_id"])
-                    del self.active_jobs[int(drone_id)]
-                    # INFORM BACKBONE
-                    url = backbone_url + "/jobs/complete/" + str(job["job_id"])
-                    try: requests.post(url, timeout=2)
-                    except: self.logger.warn("Job status complete send to backbone failed")
+                self.job_complete(data["id"])
             elif data["action"] == "job_failed":
-                drone_id = data["id"]
-                if int(drone_id) in self.active_jobs:
-                    self.logger.info("Drone with id: %d FAILED its job" % int(drone_id))
-                    self.active_drones.remove(int(drone_id))
-                    job = self.active_jobs[int(drone_id)]
-                    job_id = job["job_id"]
-                    del self.active_jobs[int(drone_id)]
-                    # Add job back in queue
-                    self.jobs[int(job_id)] = job
-                    self.db.reset_job(int(job_id))
+                self.job_failed(data["id"])
         except KeyError:
             self.logger.warn(
                 "Received message with action: %s, not enough data provided to perform action." % data["action"])
@@ -193,6 +179,32 @@ class Backend():
             self.active_drones.append(drone_id)
             del self.jobs[job_id]
             self.db.set_job_active(job_id, drone_id)
+
+    def job_complete(self, drone_id):
+        if int(drone_id) in self.active_drones:
+            self.logger.info("Drone with id: %d COMPLETED its job" % (int(drone_id)))
+            self.active_drones.remove(int(drone_id))
+            job = self.active_jobs[int(drone_id)]
+            # remove job from db
+            self.db.remove_job(job["job_id"])
+            del self.active_jobs[int(drone_id)]
+            # INFORM BACKBONE
+            url = backbone_url + "/jobs/complete/" + str(job["job_id"])
+            try:
+                requests.post(url, timeout=2)
+            except:
+                self.logger.warn("Job status complete send to backbone failed")
+
+    def job_failed(self, drone_id):
+        if int(drone_id) in self.active_jobs:
+            self.logger.info("Drone with id: %d FAILED its job" % int(drone_id))
+            self.active_drones.remove(int(drone_id))
+            job = self.active_jobs[int(drone_id)]
+            job_id = job["job_id"]
+            del self.active_jobs[int(drone_id)]
+            # Add job back in queue
+            self.jobs[int(job_id)] = job
+            self.db.reset_job(int(job_id))
 
     def find_location(self, id):
         return self.drones[id]

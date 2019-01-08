@@ -39,8 +39,8 @@ def add_drone(unique_msg):
 @app.route('/removeDrone/<drone_id>')
 def remove_drone(drone_id):
     global global_backend
-    reply = global_backend.remove_drone(drone_id)
-    return json.dumps(reply)
+    result = "true" if global_backend.remove_drone(drone_id) else "false"
+    return json.dumps({"result": result})
 
 
 @app.route('/getMarkers/')
