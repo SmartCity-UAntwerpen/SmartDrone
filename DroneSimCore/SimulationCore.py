@@ -13,8 +13,8 @@ def create(id):
     if id in drones:
         return b'NACK'
     else:
-        # dictionary key (drone id_ value( marker, process)
-        drones[id] = [-1, None]
+        # dictionary key (drone id_ value( marker, simProcess, controllerProcess)
+        drones[id] = [-1, None, None]
         return b'ACK'
 
 
@@ -26,11 +26,13 @@ def run(id):
     if start_marker_id == -1 or start_marker_id is None:
         drones[id][0] = 0
         start_marker_id = 0
+
     intID = int(id)
     simport = 5000 + intID * 2
-    process = subprocess.Popen(
-        ["python", "../start_drone.py", "-s", "-p", str(simport), "-m", str(start_marker_id), "-b", backendIP])
-    drones[id][1] = process
+    simProcess = subprocess.Popen(["python", "../DroneSim/DroneSimulator.py", str(simport)])
+    drones[id][1] = simProcess
+    controlProcess = subprocess.Popen(["python","../DroneCore/Controller.py",str(simport), str(start_marker_id), str(backendIP)])
+    drones[id][2] = controlProcess
 
 
 def stop(id):
@@ -38,8 +40,9 @@ def stop(id):
     print("Stop drone.")
     # stop simulated
     if id in drones:
-        process = drones[id][1]
-        if process is None:
+        simprocess = drones[id][1]
+        controlProcess = drones[id][2]
+        if simprocess is None and controlProcess is None:
             print("no process to kill")
             return b'NACK'
         else:
@@ -48,7 +51,8 @@ def stop(id):
                     # TODO fix windows
                     print("cannot stop this program when running on windows")
                 else:
-                    process.send_signal(signal.SIGINT)
+                    simprocess.send_signal(signal.SIGINT)
+                    controlProcess.send_signal(signal.SIGINT)
             except:
                 return b'NACK'
         return b'ACK'
@@ -125,7 +129,6 @@ if __name__ == "__main__":
     print("stop id: stops simulated drone, works only on linux")
     print("kill id: removes drone from the list")
     print("set_startpoint id startpoint: change startpoint from drone")
-
 
     command_socket = SocketCallback(ip, port)
     command_socket.add_callback(handle_command)
