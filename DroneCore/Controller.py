@@ -284,8 +284,7 @@ class Controller(threading.Thread):
                             else:
                                 # drone back in idle state, add job back in job queue
                                 # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
-                                self.logger.info("Job was aborted, but drone is reset and back in idle state, retrying...")
-                                self.jobs.append(job)
+                                self.logger.info("Job was aborted, but drone is reset and back in idle.")
                         else:
                             self.logger.warn("Job failed.")
                 else:

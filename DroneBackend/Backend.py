@@ -91,7 +91,7 @@ class Backend():
         self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
 
         self.drone_alive_checker = DroneAliveChecker(self)
-        self.drone_alive_checker.start()
+        #self.drone_alive_checker.start()
         self.logger.info("Backend started.")
 
     def add_drone(self, unique_msg):
