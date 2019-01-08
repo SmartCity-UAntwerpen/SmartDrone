@@ -1,5 +1,5 @@
 import paho.mqtt.client as paho
-import json, enum, requests
+import json, enum, requests, threading, time
 import DroneBackend.BackendLogger as BackendLogger
 import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
@@ -21,6 +21,33 @@ class DroneStatusEnum(enum.Enum):
     EmergencyGamepadStop=7
 
 
+class DroneAliveChecker(threading.Thread):
+
+    def __init__(self, backend):
+        super().__init__()
+        self.backend = backend
+        self.running = True
+
+    def run(self):
+        counter = 0
+        time_step = 0.1
+        while self.running:
+            if counter >= 10: # check if drones are alive every 10 seconds
+                self.backend.logger.info("Checking if drones are alive...")
+                for drone in list(self.backend.drones):
+                    if drone not in self.backend.alive_drones:
+                        self.backend.logger.info(
+                            "Drone with id %d, did not send status update, removing drone." % drone)
+                        self.backend.remove_drone(drone)
+                counter = 0
+            counter += time_step
+            time.sleep(time_step)
+
+    def join(self, timeout=0):
+        self.running = False
+        super().join(timeout)
+
+
 class Backend():
 
     logger = BackendLogger.logger
@@ -32,6 +59,9 @@ class Backend():
     jobs = {}
     active_jobs = {}
     active_drones = []
+    drones = []
+    ids = []
+    alive_drones = []
 
     def __init__(self, ip, port, base_mqtt_topic):
         # Start tcp socket, drones connect to this socket to add themselves to the network
@@ -54,6 +84,9 @@ class Backend():
 
         self.drones, self.ids = self.db.load_drones()
         self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
+
+        self.drone_alive_checker = DroneAliveChecker(self)
+        self.drone_alive_checker.start()
         self.logger.info("Backend started.")
 
     def add_drone(self, unique_msg):
@@ -116,6 +149,7 @@ class Backend():
                                  % (data["id"], data["position"][0], data["position"][1], data["position"][2]))
             elif data["action"] == "status_update":
                 self.logger.info("Status update. Drone id: %d, status: %s" % (data["id"], data["status"]))
+                self.alive_drones.append(int(data["id"]))
                 if int(data["status"]) == DroneStatusEnum.Idle.value:
                     self.assign_job_to_drone(int(data["id"]))
             elif data["action"] == "job_complete":
@@ -168,6 +202,7 @@ class Backend():
             self.drones[id] = location
 
     def __del__(self):
+        self.drone_alive_checker.join()
         self.mqtt.disconnect()
         self.mqtt.loop_stop()
 
