@@ -10,6 +10,7 @@ base_topic = "smartcity/drones"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 
+
 class DroneStatusEnum(enum.Enum):
     Init=0
     Idle=1

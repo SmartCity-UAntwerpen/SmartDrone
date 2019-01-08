@@ -9,12 +9,12 @@ create table points(
   z float not null
 );
 
-insert into points(pointID, x,y,z) values(0,0,0,0);
-insert into points(pointID, x,y,z) values(1,1,0,0);
-insert into points(pointID, x,y,z) values(2,2,0,0);
-insert into points(pointID, x,y,z) values(3,3,0,0);
-insert into points(pointID, x,y,z) values(4,4,0,0);
-insert into points(pointID, x,y,z) values(5,5,0,0);
+insert into points(pointID, x,y,z) values(0,5,5,0);
+insert into points(pointID, x,y,z) values(1,0,0,0);
+insert into points(pointID, x,y,z) values(2,0,1,0);
+insert into points(pointID, x,y,z) values(3,1,1,0);
+insert into points(pointID, x,y,z) values(4,2,1,0);
+insert into points(pointID, x,y,z) values(5,3,2,0);
 
 create table drones(
   id int(11) unsigned auto_increment primary key not null,
