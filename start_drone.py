@@ -16,6 +16,7 @@ def exit(signal, frame):
 
 signal.signal(signal.SIGINT, exit)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--sim", help="Start a simulated drone.", action="store_true")
