@@ -10,7 +10,6 @@ mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 base_mqtt_topic = "smartcity/drones"
 
-
 class Visualizer:
 
     def __init__(self, width, height):
@@ -25,7 +24,7 @@ class Visualizer:
         """
         self.width = width
         self.height = height
-        self.screen_offset = 10
+        self.screen_offset = 20
 
         self.min_x = math.inf
         self.min_y = math.inf
@@ -116,15 +115,15 @@ class Visualizer:
         pos_x = int(self.width * delta_x)
         pos_y = int(self.height * delta_y)
 
-        if pos_x < 250:
+        if pos_x < self.width/2:
             pos_x += self.screen_offset
-        if pos_y < 250:
+        if pos_y < self.height/2:
             pos_y += self.screen_offset
 
-        if pos_x > 250:
+        if pos_x > self.width/2:
             pos_x -= self.screen_offset
 
-        if pos_y > 250:
+        if pos_y > self.height/2:
             pos_y -= self.screen_offset
 
         return [pos_x, pos_y]
@@ -134,9 +133,15 @@ class Visualizer:
         This function draws (as a blue circle) all the markers on to the screen
         :param markers: array of markers
         """
+        font = pygame.font.SysFont("monospace", 14)
         for marker in markers:
             [pos_x, pos_y] = self.calculate_screen_location(marker)
-            pygame.draw.circle(self.screen, (0, 0, 255), (pos_x, pos_y), 5)
+            pygame.draw.circle(self.screen, (255, 255, 255), (pos_x, pos_y), 5)
+            label = font.render("("+str(marker.x)+":"+str(marker.y)+")", 1, (255, 255, 0))
+            if pos_x > self.width/2:
+                self.screen.blit(label, (pos_x-60, pos_y))
+            else:
+                self.screen.blit(label, (pos_x, pos_y))
 
     def quit_event(self):
         """
@@ -168,6 +173,9 @@ class Visualizer:
         self.screen.fill((0, 0, 0))
         self.draw_markers(self.markers)
         self.draw_drones()
+        font = pygame.font.SysFont("monospace", 14)
+        label = font.render("(x:y)", 1, (255, 255, 0))
+        self.screen.blit(label, (self.screen_offset, self.height-self.screen_offset))
         pygame.display.update()
 
 

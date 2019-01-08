@@ -1,9 +1,10 @@
 import argparse, time
 import subprocess
 from Common.SocketCallback import SocketCallback
-import signal,sys
+import signal,sys,json,requests,random
 
 drones = {}
+marker_ids = []
 
 
 def create(id):
@@ -11,11 +12,11 @@ def create(id):
     print("Create drone.")
     # append id in list
     if id in drones:
-        return b'NACK'
+        return b'NACK\n'
     else:
         # dictionary key (drone id_ value( marker, simProcess, controllerProcess)
         drones[id] = [-1, None, None]
-        return b'ACK'
+        return b'ACK\n'
 
 
 def run(id):
@@ -29,10 +30,14 @@ def run(id):
 
     intID = int(id)
     simport = 5000 + intID * 2
-    simProcess = subprocess.Popen(["python", "../DroneSim/DroneSimulator.py", str(simport)])
-    drones[id][1] = simProcess
-    controlProcess = subprocess.Popen(["python","../DroneCore/Controller.py",str(simport), str(start_marker_id), str(backendIP)])
-    drones[id][2] = controlProcess
+    try:
+        simProcess = subprocess.Popen(["python", "../DroneSim/DroneSimulator.py", str(simport)])
+        drones[id][1] = simProcess
+        controlProcess = subprocess.Popen(["python","../DroneCore/Controller.py",str(simport), str(start_marker_id), str(backendIP)])
+        drones[id][2] = controlProcess
+        return b'ACK\n'
+    except:
+        return b'NACK\n'
 
 
 def stop(id):
@@ -44,20 +49,21 @@ def stop(id):
         controlProcess = drones[id][2]
         if simprocess is None and controlProcess is None:
             print("no process to kill")
-            return b'NACK'
+            return b'NACK\n'
         else:
             try:
                 if sys.platform == 'win32':
                     # TODO fix windows
                     print("cannot stop this program when running on windows")
+                    return b'NACK\n'
                 else:
                     simprocess.send_signal(signal.SIGINT)
                     controlProcess.send_signal(signal.SIGINT)
             except:
-                return b'NACK'
-        return b'ACK'
+                return b'NACK\n'
+        return b'ACK\n'
     else:
-        return b'NACK'
+        return b'NACK\n'
 
 
 def kill(id):
@@ -66,9 +72,9 @@ def kill(id):
     # remove id from list
     if id in drones:
         drones.pop(id)
-        return b'ACK'
+        return b'ACK\n'
     else:
-        return b'NACK'
+        return b'NACK\n'
 
 
 def restart(id):
@@ -77,35 +83,63 @@ def restart(id):
 
 
 def set_startpoint(id, startpoint):
+    # set id startpoint value
     global drones
     print("set_startpoint")
+    # check if startpoint is int
+    try:
+        startpoint = int(startpoint)
+        # check if startpoint exist in markers
+        if startpoint not in marker_ids:
+            return b'NACK\n'
+    except:
+        # startpoint is auto, chose a random value
+        startpoint = random.choice(marker_ids)
+
     if id in drones:
-        drones[id][0] = startpoint if type(startpoint) is 'int' else 0
-        return b'ACK'
+        drones[id][0] = startpoint
+        return b'ACK\n'
     else:
-        return b'NACK'
+        return b'NACK\n'
+
+
+def ping():
+    return b'PONG\n'
+
+def set_markers():
+    global marker_ids
+    url = "http://" + backendIP + ":8082/getMarkers/"
+    markers = json.loads(requests.get(url).text)['markers']
+    for m in markers.values():
+        marker_ids.append(m['id'])
 
 
 def handle_command(sock, data):
     try:
         data = data.decode()
-
         words = data.split()
-        function_name = words[0]
-        id = words[1]
-        if id.isdigit():
+        if len(words) == 1:
+            # case that data = ping
+            function_name = words[0]
             func = globals()[function_name]
-            if len(words) == 2:
-                answer = func(id)
-            elif len(words) == 3:
-                answer = func(id, words[2])
-            else:
-                answer = b'NACK'
+            answer = func()
+        elif len(words) == 2 and words[1].isdigit():
+            # case data is create, run, stop, kill , restart with id
+            function_name = words[0]
+            func = globals()[function_name]
+            answer = func(words[1])
+        elif len(words) == 4 and words[1].isdigit():
+            # case data is set id startpoint value
+            answer = set_startpoint(words[1], words[3])
         else:
-            answer = b'NACK'
+            answer = b'NACK\n'
+
         sock.send(answer)
     except:
-        pass
+        answer = b'NACK\n'
+        sock.send(answer)
+
+    print(answer)
 
 
 def exit(sign, num):
@@ -129,6 +163,8 @@ if __name__ == "__main__":
     backendIP = "localhost" if not args.backend else args.backend
     global ip
     ip = "localhost" if not args.ip else args.ip
+
+    set_markers()
 
     print("simulationCore started. Send TCP/ip packet at ", ip, ":", port)
     print("create id: adds drone to the list")
