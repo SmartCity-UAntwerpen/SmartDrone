@@ -256,7 +256,7 @@ class DroneFlightCommander:
         self.logger.info("Wait for idle.")
         while self.running and counter <= timeout:
             if self.drone.Gamepad.Start == 1:
-                self.drone.Arm()
+                self.drone.ClearEmergency()
                 self.logger.info("Drone state set to idle.")
                 return True
             counter += sleep_time
