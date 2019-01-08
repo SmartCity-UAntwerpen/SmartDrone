@@ -1,7 +1,15 @@
 
 import time, argparse, sys
 from subprocess import Popen
-from signal import SIGINT
+import signal
+
+signal.signal(signal.SIGINT, exit)
+
+running = False
+
+def exit(signal, frame):
+    global running
+    running = False
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

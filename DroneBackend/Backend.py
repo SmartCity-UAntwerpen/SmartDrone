@@ -6,18 +6,10 @@ import Common.DBConnection as db_connection
 from Common.Marker import Marker
 from Common.FlightPlanner import FlightPlanner
 
-backbone_url = "http://172.16.0.139"
+backbone_url = "http://172.16.0.139:10000"
 base_topic = "smartcity/drones"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
-
-
-temp_markers = {
-    0: Marker(0,0,0,0),
-    1: Marker(1,0,0,1),
-    2: Marker(2,0,0,2),
-}
-
 
 class DroneStatusEnum(enum.Enum):
     Init=0
@@ -40,7 +32,7 @@ class Backend():
     flightplanner = FlightPlanner()
     jobs = {}
     active_jobs = {}
-    active_drones = []          # simple solution, maybe a better solution is to add a  new state to the drones
+    active_drones = []
 
     def __init__(self, ip, port, base_mqtt_topic):
         # Start tcp socket, drones connect to this socket to add themselves to the network
@@ -48,10 +40,8 @@ class Backend():
         self.port = port
 
         # Connect to database
-        self.db = db_connection.DBConnection()
+        self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
         self.markers = self.db.get_markers()
-
-        #self.markers = temp_markers
 
         self.flightplanner.update_markers(self.markers)
 
@@ -132,14 +122,27 @@ class Backend():
             elif data["action"] == "job_complete":
                 drone_id = data["id"]
                 if int(drone_id) in self.active_drones:
-                    self.logger.info("Drone with id: %d completed its job: with status: %s" % (int(drone_id), str(data["status"])))
+                    self.logger.info("Drone with id: %d COMPLETED its job" % (int(drone_id)))
                     self.active_drones.remove(int(drone_id))
                     job = self.active_jobs[int(drone_id)]
+                    # remove job from db
+                    self.db.remove_job(job["job_id"])
                     del self.active_jobs[int(drone_id)]
                     # INFORM BACKBONE
-                    url = backbone_url + "/job/complete/" + str(job["job_id"])
+                    url = backbone_url + "/jobs/complete/" + str(job["job_id"])
                     try: requests.post(url, timeout=2)
                     except: self.logger.warn("Job status complete send to backbone failed")
+            elif data["action"] == "job_failed":
+                drone_id = data["id"]
+                if int(drone_id) in self.active_jobs:
+                    self.logger.info("Drone with id: %d FAILED its job" % int(drone_id))
+                    self.active_drones.remove(int(drone_id))
+                    job = self.active_jobs[int(drone_id)]
+                    job_id = job["job_id"]
+                    del self.active_jobs[int(drone_id)]
+                    # Add job back in queue
+                    self.jobs[int(job_id)] = job
+                    self.db.reset_job(int(job_id))
         except KeyError:
             self.logger.warn(
                 "Received message with action: %s, not enough data provided to perform action." % data["action"])
@@ -156,6 +159,7 @@ class Backend():
             self.active_jobs[drone_id] = self.jobs[job_id]
             self.active_drones.append(drone_id)
             del self.jobs[job_id]
+            self.db.set_job_active(job_id, drone_id)
 
     def find_location(self, id):
         return self.drones[id]

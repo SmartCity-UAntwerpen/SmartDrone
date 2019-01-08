@@ -5,7 +5,7 @@ import Common.Marker as Marker
 
 class DBConnection:
 
-    def __init__(self):
+    def __init__(self, hostname, password):
         """
         This class makes a connection with a mysql database called drones.
         If the database does not exist yet, a .sql script will run, make the database and fill it.
@@ -17,8 +17,6 @@ class DBConnection:
         drone consist of entries with [id,x,y,z]
         each drone corresponds to a physical or simulated drone with an id and a x,y,z location.
         """
-        hostname = "smartcity.ddns.net"
-        password = "smartcity"
         try:
             self.db = pymysql.connect(
                 host=hostname,
@@ -111,7 +109,7 @@ class DBConnection:
             self.query(query)
         except Exception as e: print(e)
 
-    def delete_job(self, job_id):
+    def remove_job(self, job_id):
         try:
             query = "delete from drones.jobs where job_id=%d" % job_id
             self.query(query)
@@ -136,20 +134,21 @@ class DBConnection:
         except Exception as e: print(e)
         return jobs, active_jobs, active_drones
 
+    def set_job_active(self, job_id, drone_id):
+        try:
+            sql = "update drones.jobs set droneID=%d, active=%d where job_id=%d" % (drone_id, 1, job_id)
+            self.query(sql)
+        except Exception as e: print(e)
+
+    def reset_job(self, job_id):
+        try:
+            sql = "update drones.jobs set droneID=%d, active=%d where job_id=%d" % (-1, 0, job_id)
+            self.query(sql)
+        except Exception as e: print(e)
+
     def get_markers(self):
         markers = {}
         for m in self.query("select * from drones.points"):
             marker = Marker.Marker(m[2], m[3], m[4], m[1])
             markers[m[1]] = marker
         return markers
-
-
-if __name__ == "__main__":
-
-    """
-    Small test case for DBConnection
-    """
-    db = DBConnection()
-    out = db.query("select * from point")
-    for i in out:
-        print(i)
