@@ -11,7 +11,7 @@ from Common.Marker import Marker
 class DroneFlightCommander:
     drone = Drone.Drone()
 
-    def __init__(self, port):
+    def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"
         self.command_socket = SocketCallback(ip, port)
         self.command_socket.add_callback(self.handle_command)
@@ -20,7 +20,9 @@ class DroneFlightCommander:
         self.status_socket.add_callback(self.handle_status_update)
         self.status_socket.start()
         self.markers = None
+        self.auto_arm = auto_arm
         self.drone.black_box.info("Drone simulator started.")
+        if self.auto_arm: self.drone.black_box.info("Auto arm enabled.")
 
     def handle_status_update(self, sock, data):
         try:
@@ -236,7 +238,10 @@ class DroneFlightCommander:
         return False
 
     def wait_for_arm(self):
-        if input("").lower() == "arm":
+        if self.auto_arm:
+            self.drone.arm()
+            return True
+        elif input("").lower() == "arm":
             self.drone.arm()
             return True
         self.drone.status = Drone.DroneStatusEnum.EmergencyGamepadStop      # for test, remove is not necessary
@@ -258,7 +263,10 @@ def exit(signal, frame):
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
-    flight_commander = DroneFlightCommander(int(sys.argv[1]))
+    try:
+        flight_commander = DroneFlightCommander(int(sys.argv[1]), auto_arm=(sys.argv[2] == "auto_arm"))
+    except IndexError:
+        flight_commander = DroneFlightCommander(int(sys.argv[1]))
 
     running = True
     while running:

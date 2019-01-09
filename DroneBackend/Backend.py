@@ -1,5 +1,5 @@
 import paho.mqtt.client as paho
-import json, enum, requests, threading, time, datetime
+import json, enum, requests, threading, time
 import DroneBackend.BackendLogger as BackendLogger
 import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
@@ -38,7 +38,7 @@ class DroneAliveChecker(threading.Thread):
                 for drone in list(self.backend.drones.keys()):
                     remove = False
                     if drone not in self.backend.alive_drones: remove = True
-                    elif (time.time() - self.backend.alive_drones[drone]) > 4: remove = True
+                    elif (time.time() - self.backend.alive_drones[drone]) > 20: remove = True   # 20 seconds because real drone can take some time to start sending messages
                     if remove:
                         self.backend.logger.info(
                             "Drone with id %d, did not send status update in time, removing drone." % drone)
@@ -74,7 +74,8 @@ class Backend():
         self.port = port
 
         # Connect to database
-        self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
+        #self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
+        self.db = db_connection.DBConnection("localhost", "n010897")
         self.markers = self.db.get_markers()
 
         self.flightplanner.update_markers(self.markers)
@@ -91,7 +92,7 @@ class Backend():
         self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
 
         self.drone_alive_checker = DroneAliveChecker(self)
-        #self.drone_alive_checker.start()
+        self.drone_alive_checker.start()
         self.logger.info("Backend started.")
 
     def add_drone(self, unique_msg):
@@ -218,7 +219,8 @@ class Backend():
             self.drones[id] = location
 
     def __del__(self):
-        self.drone_alive_checker.join()
+        if self.drone_alive_checker:
+            self.drone_alive_checker.join()
         self.mqtt.disconnect()
         self.mqtt.loop_stop()
 

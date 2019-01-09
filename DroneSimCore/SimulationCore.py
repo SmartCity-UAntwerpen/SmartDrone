@@ -34,7 +34,7 @@ def run(id):
     intID = int(id)
     simport = 5000 + intID * 2
     try:
-        simProcess = subprocess.Popen(["python", "../DroneSim/DroneSimulator.py", str(simport)])
+        simProcess = subprocess.Popen(["python", "../DroneSim/DroneSimulator.py", str(simport), "auto_arm"])
         drones[id][1] = simProcess
         controlProcess = subprocess.Popen(["python","../DroneCore/Controller.py",str(simport), str(start_marker_id), str(backendIP)])
         drones[id][2] = controlProcess

@@ -13,6 +13,16 @@ def distance(m1, m2):
     return math.sqrt(pow(m2.x - m1.x, 2) + pow(m2.y - m1.y, 2) + pow(m2.z - m2.z, 2))
 
 
+def map(value, leftMin, leftMax, rightMin, rightMax):
+    """
+    Map a value located between [leftMin, leftMax] to a value between [rightMin, righMax]
+    """
+    leftSpan = leftMax - leftMin
+    rightSpan = rightMax - rightMin
+    valueScaled = float(value - leftMin) / float(leftSpan)
+    return rightMin + (valueScaled * rightSpan)
+
+
 class FlightPlanner:
     def __init__(self):
         """
@@ -23,6 +33,8 @@ class FlightPlanner:
         self.maxFlightDistance = 1
         self.markers = {}
         self.G = None
+        self.longest_path_cost = 5      # used to map cost to [0, 100], this value should be the longest path in the graph
+        # TODO: calculate longest path in the graph
 
     def update_markers(self, markers):
         self.markers = {}
@@ -43,7 +55,6 @@ class FlightPlanner:
         :param verbose: for debug prints the graph
         :return: the graph
         """
-        # TODO replace this method to the backbone and let the FlightPlanner import the map from the backbone
 
         G = nx.Graph()
         G.add_nodes_from(self.markers.values())
@@ -124,4 +135,7 @@ class FlightPlanner:
     def calculate_cost(self, id_marker1, id_marker2):
         m1 = self.markers[id_marker1]
         m2 = self.markers[id_marker2]
-        return nx.shortest_path_length(self.G, m1,m2, weight='weight')
+        try: cost = nx.shortest_path_length(self.G, m1, m2, weight='weight')
+        except: cost = 100000
+        if cost > self.longest_path_cost: self.longest_path_cost = cost
+        return int(map(cost, 0, self.longest_path_cost, 0, 100))
