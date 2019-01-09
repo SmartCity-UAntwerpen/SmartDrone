@@ -25,6 +25,7 @@ class DBConnection:
                 db="drones"
             )
         except :
+            # TODO what is password or hostname is wrong
             print("make database")
             # database drones does not exist
             # so make it with the use of a .sql script

@@ -1,3 +1,6 @@
+import sys
+sys.path.append(sys.path[0]+"/..")
+
 import argparse, time
 import subprocess
 from Common.SocketCallback import SocketCallback
