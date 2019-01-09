@@ -5,8 +5,6 @@ import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
 from Common.FlightPlanner import FlightPlanner
 
-backbone_url = "http://172.16.0.139:10000"
-base_topic = "smartcity/drones"
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 
@@ -55,6 +53,8 @@ class DroneAliveChecker(threading.Thread):
 
 class Backend():
 
+    backbone_url = "http://smartcity.ddns.net:10000"
+    base_mqtt_topic = "smartcity/drones"
     logger = BackendLogger.logger
     mqtt = None
     api = None
@@ -68,19 +68,22 @@ class Backend():
     ids = []
     alive_drones = {}
 
-    def __init__(self, ip, port, base_mqtt_topic):
+    def __init__(self, ip, port, base_mqtt_topic=None, backbone_url=None):
         # Start tcp socket, drones connect to this socket to add themselves to the network
         self.ip = ip
         self.port = port
 
+        if backbone_url: self.backbone_url = backbone_url
+        if base_mqtt_topic: self.base_mqtt_topic = base_mqtt_topic
+
         # Connect to database
-        self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
+        #self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
+        self.db = db_connection.DBConnection("localhost", "n010897")
         self.markers = self.db.get_markers()
 
         self.flightplanner.update_markers(self.markers)
 
         # Setup MQTT here
-        self.base_mqtt_topic = base_mqtt_topic
         self.mqtt = paho.Client()
         self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
         self.mqtt.connect(mqtt_broker, mqtt_port, 60)
@@ -93,6 +96,8 @@ class Backend():
         self.drone_alive_checker = DroneAliveChecker(self)
         self.drone_alive_checker.start()
         self.logger.info("Backend started.")
+        self.logger.info("Backbone url: %s" % self.backbone_url)
+        self.logger.info("Base MQTT topic: %s" % self.base_mqtt_topic)
 
     def add_drone(self, unique_msg):
         self.logger.info("Add_drone %s." % unique_msg)
@@ -176,7 +181,7 @@ class Backend():
 
             job = self.jobs[job_id]
             job["action"] = "no_plan_job"       # backend now does not make the flightplan, in the future the flight plan could be created here
-            self.mqtt.publish(base_topic + "/" + str(drone_id), json.dumps(job), qos=2)
+            self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
             self.logger.info("Deploying job to drone [id]: %d, [job_id] %d" % (drone_id, job_id))
 
             self.active_jobs[drone_id] = self.jobs[job_id]
@@ -193,7 +198,7 @@ class Backend():
             self.db.remove_job(job["job_id"])
             del self.active_jobs[int(drone_id)]
             # INFORM BACKBONE
-            url = backbone_url + "/jobs/complete/" + str(job["job_id"])
+            url = self.backbone_url + "/jobs/complete/" + str(job["job_id"])
             try:
                 requests.post(url, timeout=2)
             except:
@@ -224,7 +229,7 @@ class Backend():
         self.mqtt.loop_stop()
 
 
-def start_backend():
+def start_backend(ip, mqtt_topic, backbone_url):
     global backend
-    backend = Backend("0.0.0.0", 8082, base_topic)
+    backend = Backend(ip, 8082, mqtt_topic, backbone_url)
     REST.RestApi(backend)
