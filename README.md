@@ -1,15 +1,22 @@
 # SmartDrone
 Folder structure:
-* DroneSim - simulator
-* dronefw - drone driver
+* Common
+* DroneBackend - backend
 * DroneCore - drone core
+* DroneSim - simulator
+* DroneSimCore - abstraction level above real simulator
+* dronefw - drone driver
+
 
 ## Dependencies
-* numpy
+* pymysql
 * networkx
-* matplotlib: to plot the map graph
-* pygame - for visualizing the simulator
-* flask - REST
+* flask
+* pygame
+* paho.mqtt.client
+* uuid
+* numpy
+* requests
 
 ## JSON commands
 {
