@@ -77,8 +77,7 @@ class Backend():
         if base_mqtt_topic: self.base_mqtt_topic = base_mqtt_topic
 
         # Connect to database
-        #self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
-        self.db = db_connection.DBConnection("localhost", "n010897")
+        self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
         self.markers = self.db.get_markers()
 
         self.flightplanner.update_markers(self.markers)
