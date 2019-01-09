@@ -18,9 +18,9 @@ Options | | Explenation
  --- | --- | --- 
 -h | --help | show help
 -s | --sim | Start a simulated drone.
--p PORT | --port PORT | Define port for drone executing process.
+-p PORT | --port PORT | Define port for drone executing process. Default: 5000
 -m MARKER | --marker MARKER | Define the start position of the drone, by marker id.
--b BACKEND | --backend BACKEND | Set IP address of the backend to connect to.
+-b BACKEND | --backend BACKEND | Set IP address of the backend to connect to. 
 -a | --auto | Enable auto-arm functionality, works only for simulated drones.
 
 # SmartDrone
