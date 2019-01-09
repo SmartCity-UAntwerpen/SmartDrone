@@ -74,8 +74,7 @@ class Backend():
         self.port = port
 
         # Connect to database
-        #self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
-        self.db = db_connection.DBConnection("localhost", "n010897")
+        self.db = db_connection.DBConnection("smartcity.ddns.net", "smartcity")
         self.markers = self.db.get_markers()
 
         self.flightplanner.update_markers(self.markers)
