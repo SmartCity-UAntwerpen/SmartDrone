@@ -9,11 +9,13 @@ Folder structure:
 
 
 ## Dependencies
-* numpy
+* pymysql
 * networkx
-* matplotlib: to plot the map graph
-* pygame - for visualizing the simulator
-* flask - REST
+* flask
+* pygame
+* paho.mqtt.client
+* uuid
+* numpy
 
 ## JSON commands
 {
