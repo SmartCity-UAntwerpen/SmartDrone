@@ -16,6 +16,7 @@ Folder structure:
 * paho.mqtt.client
 * uuid
 * numpy
+* requests
 
 ## JSON commands
 {
