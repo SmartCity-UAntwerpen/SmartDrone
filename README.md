@@ -1,8 +1,12 @@
 # SmartDrone
 Folder structure:
-* DroneSim - simulator
-* dronefw - drone driver
+* Common
+* DroneBackend - backend
 * DroneCore - drone core
+* DroneSim - simulator
+* DroneSimCore - abstraction level above real simulator
+* dronefw - drone driver
+
 
 ## Dependencies
 * numpy
