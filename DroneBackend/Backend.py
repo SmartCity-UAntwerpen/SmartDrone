@@ -93,7 +93,7 @@ class Backend():
         self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
 
         self.drone_alive_checker = DroneAliveChecker(self)
-        self.drone_alive_checker.start()
+        #self.drone_alive_checker.start()
         self.logger.info("Backend started.")
         self.logger.info("Backbone url: %s" % self.backbone_url)
         self.logger.info("Base MQTT topic: %s" % self.base_mqtt_topic)
