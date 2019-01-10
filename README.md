@@ -25,14 +25,14 @@ Options | | Explenation
 
 # Start visualizer
 
-Command: # python3 DroneBackend/Visualizer.py
+Command: `# python3 DroneBackend/Visualizer.py`
 
 # Start SimulationCore
 
-Command: # python3 DroneSimCore/SimulationCore.py <options>
+Command: `# python3 DroneSimCore/SimulationCore.py <options>`
  
- --- | ---
- -b | Define Ip adress of backend :Default localhost.
+--- | ---
+-b | Define Ip adress of backend :Default localhost.
 -p | Define port for drone executing process. Default: 5000
 -i | Define IP to listen. Default localhost 
 
