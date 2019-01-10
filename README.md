@@ -30,7 +30,7 @@ Command: `# python3 DroneBackend/Visualizer.py`
 # Start SimulationCore
 
 Command: `# python3 DroneSimCore/SimulationCore.py <options>`
- 
+ Options | Explenation 
 --- | ---
 -b | Define Ip adress of backend :Default localhost.
 -p | Define port for drone executing process. Default: 5000
