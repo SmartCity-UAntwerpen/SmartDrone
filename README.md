@@ -30,11 +30,15 @@ Command: `# python3 DroneBackend/Visualizer.py`
 # Start SimulationCore
 
 Command: `# python3 DroneSimCore/SimulationCore.py <options>`
- Options | Explenation 
---- | ---
--b | Define Ip adress of backend :Default localhost.
--p | Define port for drone executing process. Default: 5000
--i | Define IP to listen. Default localhost 
+
+
+Options | | Explenation 
+ --- | --- | --- 
+-h | --help | show help
+-b BACKBONE | --backbone BACKBONE | Define backbone url. Default: http://smartcity.ddns.net:10000
+-i IP | --ip IP | Define IP address of backend. Default:  0.0.0.0
+-m MQTT | --mqtt MQTT | Define base mqtt topic. Default: smartcity/drones
+
 
 
 # SmartDrone
