@@ -76,6 +76,7 @@ class Controller(threading.Thread):
             self.mqtt = paho.Client()
             self.mqtt.message_callback_add(data["mqtt_topic"] + "/" + str(self.id), self.unique_mqtt_callback)
             self.mqtt.message_callback_add(data["mqtt_topic"], self.public_mqtt_callback)
+            self.mqtt.username_pw_set(data["mqtt_username"], data["mqtt_password"])
             self.mqtt.connect(data["mqtt_broker"], data["mqtt_port"], 60)
             self.mqtt.subscribe(data["mqtt_topic"])
             self.mqtt.subscribe(data["mqtt_topic"] + "/" + str(self.id))

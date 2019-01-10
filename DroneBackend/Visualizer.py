@@ -8,6 +8,8 @@ from Common.DBConnection import DBConnection
 
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
+mqtt_username = "root"
+mqtt_password = "smartcity"
 base_mqtt_topic = "smartcity/drones"
 
 class Visualizer:
@@ -38,6 +40,7 @@ class Visualizer:
         self.base_mqtt_topic = base_mqtt_topic
         self.mqtt = paho.Client()
         self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
+        self.mqtt.username_pw_set(mqtt_username, mqtt_password)
         self.mqtt.connect(mqtt_broker, mqtt_port, 60)
         self.mqtt.subscribe(base_mqtt_topic + "/#")
         self.mqtt.loop_start()

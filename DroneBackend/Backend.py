@@ -7,6 +7,8 @@ from Common.FlightPlanner import FlightPlanner
 
 mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
+mqtt_username = "root"
+mqtt_password = "smartcity"
 
 
 class DroneStatusEnum(enum.Enum):
@@ -85,6 +87,7 @@ class Backend():
         # Setup MQTT here
         self.mqtt = paho.Client()
         self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
+        self.mqtt.username_pw_set(mqtt_username, mqtt_password)
         self.mqtt.connect(mqtt_broker, mqtt_port, 60)
         self.mqtt.subscribe(base_mqtt_topic + "/#")
         self.mqtt.loop_start()
@@ -117,7 +120,9 @@ class Backend():
             "id": new_drone_id,
             "mqtt_topic": self.base_mqtt_topic,
             "mqtt_broker": mqtt_broker,
-            "mqtt_port": mqtt_port
+            "mqtt_port": mqtt_port,
+            "mqtt_username": mqtt_username,
+            "mqtt_password": mqtt_password
         }
         return reply
 
