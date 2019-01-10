@@ -5,7 +5,7 @@ import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
 from Common.FlightPlanner import FlightPlanner
 
-mqtt_broker = "broker.mqttdashboard.com"
+mqtt_broker = "smartcity.ddns.net"
 mqtt_port = 1883
 
 
