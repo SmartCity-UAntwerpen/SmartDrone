@@ -23,6 +23,20 @@ Options | | Explenation
 -b BACKEND | --backend BACKEND | Set IP address of the backend to connect to. 
 -a | --auto | Enable auto-arm functionality, works only for simulated drones.
 
+# Start visualizer
+
+Command: # python3 DroneBackend/Visualizer.py
+
+# Start SimulationCore
+
+Command: # python3 DroneSimCore/SimulationCore.py <options>
+ 
+ --- | ---
+ -b | Define Ip adress of backend :Default localhost.
+-p | Define port for drone executing process. Default: 5000
+-i | Define IP to listen. Default localhost 
+
+
 # SmartDrone
 Folder structure:
 * Common
