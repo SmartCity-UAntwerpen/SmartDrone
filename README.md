@@ -31,15 +31,11 @@ Command: `# python3 DroneBackend/Visualizer.py`
 
 Command: `# python3 DroneSimCore/SimulationCore.py <options>`
 
-
 Options | | Explenation 
  --- | --- | --- 
--h | --help | show help
--b BACKBONE | --backbone BACKBONE | Define backbone url. Default: http://smartcity.ddns.net:10000
--i IP | --ip IP | Define IP address of backend. Default:  0.0.0.0
--m MQTT | --mqtt MQTT | Define base mqtt topic. Default: smartcity/drones
-
-
+-b BACKBONE | --backbone BACKBONE | Define backbone ip. Default: localhost
+-i IP | --ip IP | Define IP address for communication. Default:  localhost
+-p | --port | Define port for drone executing process. Default: 5000
 
 # SmartDrone
 Folder structure:
