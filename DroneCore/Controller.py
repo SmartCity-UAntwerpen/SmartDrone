@@ -279,7 +279,8 @@ class Controller(threading.Thread):
                         self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
                         data = json.loads(self.command_socket.recv(2048).decode())
                         if data["result"] == "false":
-                            # drone not in idle, shutdown drone
+                            message = {"action": "shutdown"}
+                            self.command_socket.send(json.dumps(message).encode())
                             exit(0,0)
                         else:
                             # drone back in idle state, add job back in job queue

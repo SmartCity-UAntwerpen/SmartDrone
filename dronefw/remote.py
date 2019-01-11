@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, time
+import sys, time, enum
 
 sys.path.append(sys.path[0] + "/..")
 
@@ -11,6 +11,11 @@ import logger as dlogger
 from Common.Marker import Marker
 from Common.SocketCallback import SocketCallback
 
+
+class FlightCommanderState(enum.Enum):
+    NoProblem = 0
+    Aborted = 1     # more states can be added to better define the problem
+
 class DroneFlightCommander:
 
     drone = Drone.DroneClass()
@@ -18,6 +23,7 @@ class DroneFlightCommander:
     px = 0
     py = 0
     pz = 0
+    state = FlightCommanderState.NoProblem
 
     def __init__(self, port):
         LastStatusTime = 0
@@ -77,9 +83,11 @@ class DroneFlightCommander:
             data = json.loads(data)
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
+            if data["action"] == "shutdown":
+                exit(0,0)
             elif data["action"] == "wait_for_idle":
                 result = "true"
-                if self.drone.DroneStatus is not Drone.DroneStatusEnum.Idle:
+                if self.drone.DroneStatus is not Drone.DroneStatusEnum.Idle or self.state is not FlightCommanderState.NoProblem:
                     if not self.wait_for_idle(120): result = "false"
                 sock.send(json.dumps({"result": result }).encode())
         except ValueError:
@@ -137,6 +145,7 @@ class DroneFlightCommander:
                     conn.send(b'ACK')
                 else:
                     self.logger.info("Drone not armed abort.")
+                    self.state = FlightCommanderState.Aborted
                     conn.send(b'ABORT')
                 return
 
@@ -207,13 +216,13 @@ class DroneFlightCommander:
                         return
 
                 elif command["command"] == "turn_left":
-                    if self.check_values(command, "angle", "rata"):
+                    if self.check_values(command, "angle", "rate"):
                         self.drone.mc.TurnLeft(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "turn_right":
-                    if self.check_values(command, "angle", "rata"):
+                    if self.check_values(command, "angle", "rate"):
                         self.drone.mc.TurnRight(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
@@ -222,13 +231,16 @@ class DroneFlightCommander:
                     marker = self.drone.ArucoNav.Center()
                     self.logger.info(marker)
                     if marker is None:
-                        self.drone.mc.land()
-                        self.logger.error("No marker")
+                        self.drone.ArucoNav.GuidedLand()
+                        self.logger.error("No marker detected")
+                        self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
+                        return
                     else:
                         if marker.Id is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
+                            self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
                         if self.markers is not None:
@@ -253,6 +265,7 @@ class DroneFlightCommander:
                 self.logger.error("Received wrong command message (no JSON).")
             if self.drone.status is Drone.DroneStatusEnum.Flying:
                 self.drone.ArucoNav.GuidedLand()
+            self.state = FlightCommanderState.Aborted
             self.logger.error("Command aborted.")
             conn.send(b'ABORT')
 
@@ -263,6 +276,7 @@ class DroneFlightCommander:
         while self.running and counter <= timeout:
             if self.drone.Gamepad.L2 == 1:
                 self.drone.ClearEmergency()
+                self.state = FlightCommanderState.NoProblem
                 self.logger.info("Drone state set to idle.")
                 return True
             counter += sleep_time

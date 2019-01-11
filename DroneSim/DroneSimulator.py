@@ -1,4 +1,4 @@
-import sys
+import sys, enum
 
 sys.path.append(sys.path[0] + "/..")
 
@@ -8,8 +8,14 @@ from Common.SocketCallback import SocketCallback
 from Common.Marker import Marker
 
 
+class FlightCommanderState(enum.Enum):
+    NoProblem = 0
+    Aborted = 1
+
+
 class DroneFlightCommander:
     drone = Drone.Drone()
+    state = FlightCommanderState.NoProblem
 
     def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"
@@ -61,9 +67,11 @@ class DroneFlightCommander:
             data = json.loads(data)
             if data["action"] == "execute_command":
                 self.perform_action(data, sock)
+            if data["action"] == "shutdown":
+                exit(0,0)
             elif data["action"] == "wait_for_idle":
                 result = "true"
-                if self.drone.status is not Drone.DroneStatusEnum.Idle:
+                if self.drone.status is not Drone.DroneStatusEnum.Idle or self.state is not FlightCommanderState.NoProblem:
                     self.drone.black_box.info("Type 'reset' to reset the drone status to idle")
                     if not self.wait_for_idle(): result = "false"
                 sock.send(json.dumps({"result": result }).encode())
@@ -119,6 +127,7 @@ class DroneFlightCommander:
                     conn.send(b'ACK')
                 else:
                     self.drone.black_box.error("Drone was not armed.")
+                    self.state = FlightCommanderState.Aborted
                     conn.send(b'ABORT')
                 return
 
@@ -216,6 +225,9 @@ class DroneFlightCommander:
                             marker = self.markers[command["id"]]
                             self.drone.center(marker.x, marker.y)
                             conn.send(b'ACK')
+                        else:
+                            self.state = FlightCommanderState.Aborted
+                            conn.send(b'ABORT')
                         return
 
                 self.drone.black_box.error("Command not executed.")
@@ -228,12 +240,13 @@ class DroneFlightCommander:
         except Exception as e:
             if type(e) == ValueError:
                 self.drone.black_box.error("Received wrong command message (no JSON).")
-            else:
-                self.drone.black_box.error("Command aborted.")
+            self.state = FlightCommanderState.Aborted
+            self.drone.black_box.error("Command aborted.")
 
     def wait_for_idle(self):
         if input("").lower() == "reset":
             self.drone.status = Drone.DroneStatusEnum.Idle
+            self.state = FlightCommanderState.NoProblem
             return True
         return False
 

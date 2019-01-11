@@ -74,7 +74,7 @@ def add_job(pidstart, pidend, jobid):
         return json.dumps({"status": "success"})
     except: return json.dumps({"status": "false"})
 
-"""
+
 @app.route('/job/getprogress/<job_id>')
 def get_progress(job_id):
     global global_backend
@@ -85,4 +85,3 @@ def get_progress(job_id):
     else:
         progress = 100
     return json.dumps({ "progress": progress })
-"""
