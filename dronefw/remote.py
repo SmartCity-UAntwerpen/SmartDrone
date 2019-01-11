@@ -227,7 +227,7 @@ class DroneFlightCommander:
                         conn.send(b'ABORT')
                     else:
                         if marker.id is not int(command["id"]):
-                            self.drone.mc.land()
+                            self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             conn.send(b'ABORT')
                         if self.markers is not None:
@@ -249,11 +249,10 @@ class DroneFlightCommander:
             self.logger.exception(e)
             if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
-            else:
-                if self.drone.status is Drone.DroneStatusEnum.Flying:
-                    self.drone.mc.land()
-                self.logger.error("Command aborted.")
-                conn.send(b'ABORT')
+            if self.drone.status is Drone.DroneStatusEnum.Flying:
+                self.drone.ArucoNav.GuidedLand()
+            self.logger.error("Command aborted.")
+            conn.send(b'ABORT')
 
     def wait_for_idle(self,timeout):
         sleep_time = 0.1

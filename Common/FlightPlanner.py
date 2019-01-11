@@ -52,8 +52,8 @@ class FlightPlanner:
         :return: longest_path_cost
         """
         longest_path_cost = 0
-        for m1 in self.markers:
-            for m2 in self.markers:
+        for m1 in self.markers.values():
+            for m2 in self.markers.values():
                 try:
                     cost = nx.shortest_path_length(self.G, m1, m2, weight='weight')
                     if cost > longest_path_cost:
