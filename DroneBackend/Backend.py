@@ -43,7 +43,7 @@ class DroneAliveChecker(threading.Thread):
                         self.backend.logger.info(
                             "Drone with id %d, did not send status update in time, removing drone." % drone)
                         self.backend.remove_drone(drone)
-                self.backend.alive_drones.clear()
+                        del self.backend.alive_drones[drone]
                 counter = 0
             counter += time_step
             time.sleep(time_step)

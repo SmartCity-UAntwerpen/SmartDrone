@@ -20,8 +20,8 @@ insert into points(pointID, x,y,z) values(0,5,5,0);
 insert into points(pointID, x,y,z) values(1,0,0,0);
 insert into points(pointID, x,y,z) values(2,1,0,0);
 insert into points(pointID, x,y,z) values(3,2,0,0);
-insert into points(pointID, x,y,z) values(4,3,0,0);
-insert into points(pointID, x,y,z) values(5,4,0,0);
+insert into points(pointID, x,y,z) values(4,3,3,0);
+insert into points(pointID, x,y,z) values(5,4,4,0);
 
 create table drones(
   id int(11) unsigned auto_increment primary key not null,
