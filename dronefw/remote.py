@@ -226,7 +226,7 @@ class DroneFlightCommander:
                         self.logger.error("No marker")
                         conn.send(b'ABORT')
                     else:
-                        if marker.id is not int(command["id"]):
+                        if marker.Id is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             conn.send(b'ABORT')
@@ -247,6 +247,7 @@ class DroneFlightCommander:
             return
         except Exception as e:
             self.logger.exception(e)
+            self.logger.info("Exception occured, drone state: %d" % self.drone.status.value)
             if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
             if self.drone.status is Drone.DroneStatusEnum.Flying:
