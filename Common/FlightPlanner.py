@@ -32,12 +32,11 @@ class FlightPlanner:
         """
         self.maxFlightDistance = 1
         self.markers = {}
+        self.links = {}
         self.G = None
-        self.longest_path_cost = 5      # used to map cost to [0, 100], this value should be the longest path in the graph
-        # TODO: calculate longest path in the graph
+        self.longest_path_cost = None  # used to map cost to [0, 100], this value should be the longest path in the graph
 
     def update_markers(self, markers):
-        self.markers = {}
         for marker in markers.keys():
             if type(markers[marker]) != Marker:
                 m = Marker() # create empty marker
@@ -45,6 +44,23 @@ class FlightPlanner:
             else: m = markers[int(marker)]
             self.markers[int(marker)] = m
         self.G = self.makeGraph()
+        self.longest_path_cost = self.find_longest_path()
+
+    def find_longest_path(self):
+        """
+        go trough all nodes and check all paths. Save the longest_path_cost
+        :return: longest_path_cost
+        """
+        longest_path_cost = 0
+        for m1 in self.markers:
+            for m2 in self.markers:
+                try:
+                    cost = nx.shortest_path_length(self.G, m1, m2, weight='weight')
+                    if cost > longest_path_cost:
+                        longest_path_cost = cost
+                except:
+                    pass
+        return longest_path_cost
 
     def makeGraph(self):
         """
@@ -133,9 +149,15 @@ class FlightPlanner:
         return flight_plan
 
     def calculate_cost(self, id_marker1, id_marker2):
-        m1 = self.markers[id_marker1]
-        m2 = self.markers[id_marker2]
-        try: cost = nx.shortest_path_length(self.G, m1, m2, weight='weight')
-        except: cost = 100000
-        if cost > self.longest_path_cost: self.longest_path_cost = cost
-        return int(map(cost, 0, self.longest_path_cost, 0, 100))
+        if self.G is not None:
+            m1 = self.markers[id_marker1]
+            m2 = self.markers[id_marker2]
+            try:
+                cost = nx.shortest_path_length(self.G, m1, m2, weight='weight')
+            except:
+                cost = 100000
+            if self.longest_path_cost is None:
+                self.longest_path_cost = self.find_longest_path() # graph should exist
+            return int(map(cost, 0, self.longest_path_cost, 0, 100))
+        else:
+            return 100000
