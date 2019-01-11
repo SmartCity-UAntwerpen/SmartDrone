@@ -230,6 +230,7 @@ class DroneFlightCommander:
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             conn.send(b'ABORT')
+                            return
                         if self.markers is not None:
                             marker = self.markers[marker.Id]
                             self.px = marker.x
