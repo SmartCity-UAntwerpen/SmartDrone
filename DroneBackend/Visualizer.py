@@ -6,11 +6,13 @@ import paho.mqtt.client as paho
 
 from Common.DBConnection import DBConnection
 
-mqtt_broker = "broker.mqttdashboard.com"
+#mqtt_broker = "broker.mqttdashboard.com"
+mqtt_broker = "smartcity.ddns.net"
 mqtt_port = 1883
 mqtt_username = "root"
 mqtt_password = "smartcity"
 base_mqtt_topic = "smartcity/drones"
+
 
 class Visualizer:
 
@@ -116,7 +118,7 @@ class Visualizer:
         delta_y = 1 if total_distance_y == 0 else distance_y / total_distance_y
 
         pos_x = int(self.width * delta_x)
-        pos_y = int(self.height * delta_y)
+        pos_y = int(self.height - (self.height * delta_y))
 
         if pos_x < self.width/2:
             pos_x += self.screen_offset
@@ -178,7 +180,7 @@ class Visualizer:
         self.draw_drones()
         font = pygame.font.SysFont("monospace", 14)
         label = font.render("(x:y)", 1, (255, 255, 0))
-        self.screen.blit(label, (self.screen_offset, self.height-self.screen_offset))
+        self.screen.blit(label, (self.screen_offset, self.screen_offset))
         pygame.display.update()
 
 
