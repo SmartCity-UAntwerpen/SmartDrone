@@ -5,7 +5,7 @@ import sys, time
 sys.path.append(sys.path[0] + "/..")
 
 import drone as Drone
-import signal, json, asyncore
+import signal, json
 import Common.Marker as Marker
 import logger as dlogger
 from Common.Marker import Marker
@@ -226,7 +226,10 @@ class DroneFlightCommander:
                         self.logger.error("No marker")
                         conn.send(b'ABORT')
                     else:
-                        # TODO check if marker is the correct marker and handle the exceptions.
+                        if marker.id is not int(command["id"]):
+                            self.drone.mc.land()
+                            self.logger.error("Wrong marker detected, abort execution!")
+                            conn.send(b'ABORT')
                         if self.markers is not None:
                             marker = self.markers[marker.Id]
                             self.px = marker.x
@@ -247,6 +250,8 @@ class DroneFlightCommander:
             if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
             else:
+                if self.drone.status is Drone.DroneStatusEnum.Flying:
+                    self.drone.mc.land()
                 self.logger.error("Command aborted.")
                 conn.send(b'ABORT')
 
@@ -292,6 +297,7 @@ def exit(signal, frame):
     running = False
     sys.exit(0)
 
+
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit)
     flight_commander = DroneFlightCommander(int(sys.argv[1]))
@@ -299,8 +305,3 @@ if __name__ == "__main__":
     running = True
     while running:
         time.sleep(1)
-
-
-
-
-6
