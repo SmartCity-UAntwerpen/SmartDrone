@@ -6,7 +6,6 @@ import paho.mqtt.client as paho
 
 from Common.DBConnection import DBConnection
 
-#mqtt_broker = "broker.mqttdashboard.com"
 mqtt_broker = "smartcity.ddns.net"
 mqtt_port = 1883
 mqtt_username = "root"
