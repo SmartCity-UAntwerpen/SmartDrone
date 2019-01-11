@@ -262,34 +262,31 @@ class Controller(threading.Thread):
         try:
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
-                if self.current_marker_id != job["point2"]:
-                    try:
-                        if self.current_marker_id != job["point1"]:
-                            # first go to point1
-                            self.logger.info("Not on point1, flying to point1")
-                            self.fly_from_to(self.current_marker_id, job["point1"])
+                try:
+                    if self.current_marker_id != job["point1"]:
+                        # first go to point1
+                        self.logger.info("Not on point1, flying to point1")
+                        self.fly_from_to(self.current_marker_id, job["point1"])
 
-                        self.fly_from_to(job["point1"], job["point2"])
-                    except Exception as e:
-                        if type(e) == AbortException:
-                            message = {"action": "job_failed", "id": self.id}
-                            self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
-                            self.logger.info("Job was aborted, backend informed.")
+                    self.fly_from_to(job["point1"], job["point2"])
+                except Exception as e:
+                    if type(e) == AbortException:
+                        message = {"action": "job_failed", "id": self.id}
+                        self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
+                        self.logger.info("Job was aborted, backend informed.")
 
-                            message = {"action": "wait_for_idle"}
-                            self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
-                            data = json.loads(self.command_socket.recv(2048).decode())
-                            if data["result"] == "false":
-                                # drone not in idle, shutdown drone
-                                exit(0,0)
-                            else:
-                                # drone back in idle state, add job back in job queue
-                                # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
-                                self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                        message = {"action": "wait_for_idle"}
+                        self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
+                        data = json.loads(self.command_socket.recv(2048).decode())
+                        if data["result"] == "false":
+                            # drone not in idle, shutdown drone
+                            exit(0,0)
                         else:
-                            self.logger.warn("Job failed.")
-                else:
-                    self.logger.info("Already at point2.")
+                            # drone back in idle state, add job back in job queue
+                            # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
+                            self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                    else:
+                        self.logger.warn("Job failed.")
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
 
