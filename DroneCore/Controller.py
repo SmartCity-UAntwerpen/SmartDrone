@@ -285,10 +285,14 @@ class Controller(threading.Thread):
                             # drone back in idle state, add job back in job queue
                             # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
                             self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                        return False
                     else:
                         self.logger.warn("Job failed.")
+                        return False
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
+            return False
+        return True
 
     def run(self):
         try:
@@ -297,12 +301,12 @@ class Controller(threading.Thread):
                 if len(self.jobs) is not 0:
                     # get the first job
                     job = self.jobs.pop(0)
-                    self.execute_job(job)
-                    message = {
-                        "action": "job_complete",
-                        "id": self.id,
-                    }
-                    self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
+                    if self.execute_job(job):
+                        message = {
+                            "action": "job_complete",
+                            "id": self.id,
+                        }
+                        self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
                 time.sleep(0.1)
         except Exception as e:
             self.logger.exception(e)
