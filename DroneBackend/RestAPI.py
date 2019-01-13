@@ -18,23 +18,11 @@ class RestApi():
             print("REST API not able to start correctly (backend is NoneType)")
 
 
-@app.route('/link/transitmap')
-def transitmap_api():
-    data = json.loads(open('carlinks.json').read())
-    return json.dumps(data)
-
-
-@app.route('/link/flagtransitmap')
-def flagtransitmap_api():
-    pass
-
-
 @app.route('/addDrone/<unique_msg>')
 def add_drone(unique_msg):
     global global_backend
     reply = global_backend.add_drone(int(unique_msg))
     return json.dumps(reply)
-
 
 @app.route('/removeDrone/<drone_id>')
 def remove_drone(drone_id):
@@ -85,3 +73,14 @@ def get_progress(job_id):
     else:
         progress = 100
     return json.dumps({ "progress": progress })
+
+
+@app.route('/job/cancel/<job_id>')
+def cancel_job(job_id):
+    global global_backend
+    result = "false"
+    if job_id in global_backend.jobs.keys():
+        del global_backend.jobs[job_id]
+        result = "true"
+    #TODO: if job is active, maybe land drone at first possible marker and remove job from active job list
+    return json.dumps({"success": result})

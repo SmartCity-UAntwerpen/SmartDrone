@@ -248,7 +248,7 @@ class Controller(threading.Thread):
         plan = self.flight_planner.find_path(point1, point2)
         if plan is None:
             self.logger.warn("No path from point %d to %d" % (point1, point2))
-            raise AbortException()
+            raise AbortException()      #TODO: handle this in a different way, maybe inform backend no path is possible, now jobs keeps being delpoyed
         self.logger.info("Flying from %d to %d." % (point1, point2))
         string = ""
         for command in plan["commands"]:

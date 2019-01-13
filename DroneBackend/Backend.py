@@ -6,6 +6,7 @@ import Common.DBConnection as db_connection
 from Common.FlightPlanner import FlightPlanner
 
 mqtt_broker = "smartcity.ddns.net"
+#mqtt_broker = "broker.mqttdashboard.com"
 mqtt_port = 1883
 mqtt_username = "root"
 mqtt_password = "smartcity"
@@ -210,14 +211,24 @@ class Backend():
 
     def job_failed(self, drone_id):
         if int(drone_id) in self.active_jobs:
-            self.logger.info("Drone with id: %d FAILED its job" % int(drone_id))
             self.active_drones.remove(int(drone_id))
             job = self.active_jobs[int(drone_id)]
             job_id = job["job_id"]
             del self.active_jobs[int(drone_id)]
-            # Add job back in queue
-            self.jobs[int(job_id)] = job
-            self.db.reset_job(int(job_id))
+
+            try: fail_count = job["attempts"]
+            except: fail_count = 0
+            fail_count += 1
+            self.logger.info("Drone with id: %d FAILED its job, attempt: %d" % (int(drone_id), fail_count))
+            # Add job back in queue if less than 10 attempts are performed
+            if fail_count >= 10:
+                self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
+                self.db.remove_job(job["job_id"])
+                # TODO: inform backbone
+            else:
+                job["attempts"] = fail_count
+                self.jobs[int(job_id)] = job
+                self.db.reset_job(int(job_id))
 
     def find_location(self, id):
         return self.drones[id]
