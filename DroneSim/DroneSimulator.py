@@ -257,6 +257,7 @@ class DroneFlightCommander:
     def wait_for_arm(self):
         if self.auto_arm:
             self.drone.arm()
+            time.sleep(1)
             return True
         elif input("").lower() == "arm":
             self.drone.arm()
