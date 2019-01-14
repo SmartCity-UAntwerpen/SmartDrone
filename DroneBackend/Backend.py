@@ -230,6 +230,11 @@ class Backend():
                 self.jobs[int(job_id)] = job
                 self.db.reset_job(int(job_id))
 
+    def job_in_active_jobs(self, job_id):
+        for job in self.active_jobs.values():
+            if job["job_id"] == job_id: return True
+        return False
+
     def find_location(self, id):
         return self.drones[id]
 

@@ -68,7 +68,7 @@ def get_progress(job_id):
     global global_backend
     if int(job_id) in global_backend.jobs.keys():
         progress = 0
-    elif int(job_id) in global_backend.active_jobs.keys():
+    elif global_backend.job_in_active_jobs(int(job_id)):
         progress = 50
     else:
         progress = 100
