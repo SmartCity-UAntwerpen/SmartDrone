@@ -68,19 +68,17 @@ class DroneFlightCommander:
             self.logger.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
-        self.logger.info("Sending position update")
         res = {
             "position": (float(self.px), float(self.py), float(self.pz)),
         }
         connection.send(json.dumps(res).encode())
 
     def send_drone_status(self, connection):
-        self.logger.info("Sending status update")
         if self.state != FlightCommanderState.NoProblem and self.drone.status == Drone.DroneStatusEnum.Idle:
             # when state != noproblem and drone state is idle, jobs will be send to drone, to avoid this we send another state
-            res = {"status": 5 }
+            res = {"status": Drone.DroneStatusEnum.EmergencyGamepadLand }
         else:
-            res = {"status": self.drone.status.value}
+            res = {"status": self.drone.DroneStatus.value}
         connection.send(json.dumps(res).encode())
 
     def handle_command(self, sock, data):
