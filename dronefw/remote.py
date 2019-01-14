@@ -59,7 +59,7 @@ class DroneFlightCommander:
                     m = Marker()  # create empty marker
                     m.load_dict(data["markers"][marker])
                     self.markers[int(marker)] = m
-                    self.logger.info("Received marker update.")
+                self.logger.info("Received marker update.")
         except ValueError:
             self.logger.exception(ValueError)
             self.logger.error("Received non json message, dropping message.")
