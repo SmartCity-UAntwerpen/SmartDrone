@@ -8,7 +8,7 @@ class SocketCallback(threading.Thread):
         super().__init__()
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.s.bind((ip, port))
-        self.s.settimeout(1) # timeout after 1 second
+        self.s.settimeout(1)   # timeout after 1 second
         self.s.listen(1)
         self.callbacks = []
         self.running = True
@@ -31,6 +31,7 @@ class SocketCallback(threading.Thread):
                 except: pass
 
     def add_callback(self, callback):
+        """ Callback should be defined as: callback(sock, data) """
         self.callbacks.append(callback)
 
     def close(self):

@@ -17,6 +17,7 @@ class FlightCommanderState(enum.Enum):
     Aborted = 1     # more states can be added to better define the problem
 
 class DroneFlightCommander:
+    """ Class based on DroneSimulator.py, more info can be found in there. """
 
     drone = Drone.DroneClass()
     logger = dlogger.create_logger()

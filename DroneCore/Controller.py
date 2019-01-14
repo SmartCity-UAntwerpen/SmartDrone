@@ -138,6 +138,7 @@ class Controller(threading.Thread):
         return True # controller successfully started
 
     def send_command(self, command):
+        """ Send the command, which should be a json format (python dictionary) with the appropriate parameters. """
         self.logger.log(15,"send_command %s", command)
         self.command_socket.send(command.encode())
         data = self.command_socket.recv(2048)
@@ -163,6 +164,8 @@ class Controller(threading.Thread):
         pass
 
     def unique_mqtt_callback(self, mosq, obj, msg):
+        """ Unique mqtt callback (base_topic/id), msg should be json with at least the field action.
+            Jobs are accepted here."""
         try:
             data = json.loads(msg.payload.decode())
             if data["action"] is None:
@@ -290,6 +293,7 @@ class Controller(threading.Thread):
                     else:
                         self.logger.warn("Job failed.")
                         return False
+                # plan job could be added here, instead of calling fly_from_to(), exectute_plan() could be used.
         except KeyError:
             self.logger.warn("Job failed, not engough information.")
             return False

@@ -14,6 +14,11 @@ class FlightCommanderState(enum.Enum):
 
 
 class DroneFlightCommander:
+    """
+        Flightcommander for simulator, this file is mostly the same as remote.py in dronefw
+        Keep in mind that the drone class in both classes is different!!
+        ex. self.drone.status is self.drone.DroneStatus in remote.py
+    """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
 
@@ -31,6 +36,7 @@ class DroneFlightCommander:
         if self.auto_arm: self.drone.black_box.info("Auto arm enabled.")
 
     def handle_status_update(self, sock, data):
+        """ Callback for status socket, json format expected with at least action field. """
         try:
             data = data.decode()
             data = json.loads(data)
@@ -66,6 +72,7 @@ class DroneFlightCommander:
         connection.send(json.dumps(res).encode())
 
     def handle_command(self, sock, data):
+        """ Callback for command socket, json format expected with at least action field. """
         try:
             data = data.decode()
             data = json.loads(data)
@@ -103,6 +110,7 @@ class DroneFlightCommander:
         return True
 
     def perform_action(self, command, conn):
+        """ This function actualy perform the flight actions, as well as some other drone related functions. """
         try:
             self.drone.black_box.log(15, command)
             if command["command"] == "set_position_marker":

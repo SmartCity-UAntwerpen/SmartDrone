@@ -31,6 +31,8 @@ class DroneAliveChecker(threading.Thread):
         self.running = True
 
     def run(self):
+        """ Check every 10 seconds if drones has at least once sent a status update,
+        if not and last message was 20 seconds ago then we remove the drone from backend """
         counter = 0
         time_step = 0.1
         while self.running:
@@ -85,7 +87,7 @@ class Backend():
 
         self.flightplanner.update_markers(self.markers)
 
-        # Setup MQTT here
+        # Setup MQTT
         self.mqtt = paho.Client()
         self.mqtt.message_callback_add(base_mqtt_topic + "/backend", self.mqtt_callback)
         self.mqtt.username_pw_set(mqtt_username, mqtt_password)
@@ -103,6 +105,7 @@ class Backend():
         self.logger.info("Base MQTT topic: %s" % self.base_mqtt_topic)
 
     def add_drone(self, unique_msg):
+        """ Create an id for the drone by using the unique msg, which is mac + port from drone, reply with mqtt details"""
         self.logger.info("Add_drone %s." % unique_msg)
         if unique_msg in self.ids.keys():
             new_drone_id = self.ids[unique_msg]
@@ -151,6 +154,7 @@ class Backend():
         return False
 
     def mqtt_callback(self, mosq, obj, msg):
+        """ Base MQTT callback for backend, here json messages with at least the fields id and action are expected."""
         data = json.loads(msg.payload.decode())
         self.logger.log(15, data)
         if data["action"] is None or data["id"] is None:
