@@ -44,7 +44,7 @@ class DroneAliveChecker(threading.Thread):
                         self.backend.logger.info(
                             "Drone with id %d, did not send status update in time, removing drone." % drone)
                         self.backend.remove_drone(drone)
-                        del self.backend.alive_drones[drone]
+                        if drone in self.backend.alive_drones: del self.backend.alive_drones[drone]
                 counter = 0
             counter += time_step
             time.sleep(time_step)
@@ -224,7 +224,7 @@ class Backend():
             if fail_count >= 10:
                 self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
                 self.db.remove_job(job["job_id"])
-                # TODO: inform backbone
+                # TODO: inform backbone + make sure to send job to another drone (maybe keep drone_id attached to the job)
             else:
                 job["attempts"] = fail_count
                 self.jobs[int(job_id)] = job
