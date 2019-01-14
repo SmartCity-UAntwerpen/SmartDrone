@@ -32,6 +32,7 @@ class Poller(threading.Thread):
 
     def run(self):
         while self.running:
+            print("controller send position update")
             controller.send_position_update()
             controller.send_status_update()
             time.sleep(2)
