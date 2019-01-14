@@ -68,6 +68,7 @@ class DroneFlightCommander:
             self.logger.error("Message does not contain enough information.")
 
     def send_drone_position(self, connection):
+        self.logger.info("Sending position update")
         res = {
             "position": (float(self.px), float(self.py), float(self.pz)),
         }
