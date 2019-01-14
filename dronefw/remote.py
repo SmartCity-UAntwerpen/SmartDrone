@@ -74,7 +74,7 @@ class DroneFlightCommander:
         connection.send(json.dumps(res).encode())
 
     def send_drone_status(self, connection):
-        if self.state != FlightCommanderState.NoProblem and self.drone.status == Drone.DroneStatusEnum.Idle:
+        if self.state != FlightCommanderState.NoProblem and self.drone.DroneStatus == Drone.DroneStatusEnum.Idle:
             # when state != noproblem and drone state is idle, jobs will be send to drone, to avoid this we send another state
             res = {"status": Drone.DroneStatusEnum.EmergencyGamepadLand }
         else:
@@ -264,10 +264,10 @@ class DroneFlightCommander:
             return
         except Exception as e:
             self.logger.exception(e)
-            self.logger.info("Exception occured, drone state: %d" % self.drone.status.value)
+            self.logger.info("Exception occured, drone state: %d" % self.drone.DroneStatus.value)
             if type(e) == ValueError:
                 self.logger.error("Received wrong command message (no JSON).")
-            if self.drone.status is Drone.DroneStatusEnum.Flying:
+            if self.drone.DroneStatus is Drone.DroneStatusEnum.Flying:
                 self.drone.ArucoNav.GuidedLand()
             self.state = FlightCommanderState.Aborted
             self.logger.error("Command aborted.")
