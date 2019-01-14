@@ -78,7 +78,7 @@ class DroneFlightCommander:
         self.logger.info("Sending status update")
         if self.state != FlightCommanderState.NoProblem and self.drone.status == Drone.DroneStatusEnum.Idle:
             # when state != noproblem and drone state is idle, jobs will be send to drone, to avoid this we send another state
-            res = {"status": Drone.DroneStatusEnum.EmergencyGamepadLand }
+            res = {"status": 5 }
         else:
             res = {"status": self.drone.status.value}
         connection.send(json.dumps(res).encode())
