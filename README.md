@@ -2,7 +2,7 @@
 
 Command: `# python3 start_backed.py <options> ` 
 
-Options | | Explenation 
+Options | | Explaination 
  --- | --- | --- 
 -h | --help | show help
 -b BACKBONE | --backbone BACKBONE | Define backbone url. Default: http://smartcity.ddns.net:10000
@@ -14,7 +14,7 @@ Options | | Explenation
 
 Command: `# python3 start_drone.py <options> `
 
-Options | | Explenation 
+Options | | Explaination 
  --- | --- | --- 
 -h | --help | show help
 -s | --sim | Start a simulated drone.
@@ -31,7 +31,7 @@ Command: `# python3 DroneBackend/Visualizer.py`
 
 Command: `# python3 DroneSimCore/SimulationCore.py <options>`
 
-Options | | Explenation 
+Options | | Explaination 
  --- | --- | --- 
 -b BACKBONE | --backbone BACKBONE | Define backbone ip. Default: localhost
 -i IP | --ip IP | Define IP address for communication. Default:  localhost
