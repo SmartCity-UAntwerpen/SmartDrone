@@ -37,4 +37,3 @@ class Marker:
             self.id = dict["id"]
         except: print("Error loading dictionary!")
 
-

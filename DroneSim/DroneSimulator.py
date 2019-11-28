@@ -288,6 +288,7 @@ def exit(signal, frame):
 
 
 if __name__ == "__main__":
+    print("STARTUP - DroneSimulator Starting...")
     signal.signal(signal.SIGINT, exit)
     try:
         flight_commander = DroneFlightCommander(int(sys.argv[1]), auto_arm=(sys.argv[2] == "auto_arm"))

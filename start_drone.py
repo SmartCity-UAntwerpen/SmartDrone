@@ -1,5 +1,6 @@
 
 import time, argparse, sys
+import os
 from subprocess import Popen
 
 running = False
@@ -23,9 +24,16 @@ if __name__ == "__main__":
 
     if args.sim:
         # start a simulated drone
-        executing_process = Popen(["python3", "DroneSimulator.py", str(port), auto_arm], cwd=sys.path[0]+"/DroneSim")
-        communicating_process = Popen(["python3", "Controller.py", str(port), str(marker), str(ip)],cwd=sys.path[0]+"/DroneCore")
+        print("INFO: Simulated Drone starting...")
+        # py veranderen naar python3 als op linux!
+        #TODO: make generic for linux
 
+        currentPath = sys.path[0]
+        pythonPath = os.path.dirname(sys.executable)
+        os.chdir(pythonPath)
+        executing_process = Popen(["python.exe", "DroneSimulator.py", str(port), auto_arm], cwd=sys.path[0]+"/DroneSim")
+        communicating_process = Popen(["python.exe", "Controller.py", str(port), str(marker), str(ip)],cwd=sys.path[0]+"/DroneCore")
+        os.chdir(currentPath)
         running = True
         try:
             while running:
@@ -41,9 +49,15 @@ if __name__ == "__main__":
 
     else:
         # start a normal drone
-        executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
-        communicating_process = Popen(["python3", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
+        print("STARTUP: Real Drone starting...")
 
+        currentPath = sys.path[0]
+        pythonPath = os.path.dirname(sys.executable)
+        os.chdir(pythonPath)
+        executing_process = Popen(["python.exe", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
+        communicating_process = Popen(["python.exe", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
+        os.chdir(currentPath)
+        
         running = True
         try:
             while running:

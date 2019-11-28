@@ -348,6 +348,7 @@ def exit(signal, frame):
 
 
 if __name__ == '__main__':
+    print("STARTUP: Starting controller")
     signal.signal(signal.SIGINT, exit)
     controller = Controller(sys.argv[3], int(sys.argv[1]))
     controller.current_marker_id = int(sys.argv[2])

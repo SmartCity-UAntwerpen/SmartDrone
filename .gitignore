@@ -1,3 +1,5 @@
 .idea/*
 ./__pychache__/*
 ./venv/*
+.vscode/*
+.backend_log
