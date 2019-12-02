@@ -29,7 +29,7 @@ class DroneFlightCommander:
     py = 0
     pz = 0
     state = FlightCommanderState.NoProblem
-    #vector = MarkerVectorClass
+    deviation = MarkerVectorClass
 
     def __init__(self, port):
         LastStatusTime = 0
@@ -48,6 +48,8 @@ class DroneFlightCommander:
             self.markers = None
             self.logger.info("Drone started.")
             self.running = True
+            self.deviated = False
+            
         else:
             self.running = False
 
@@ -92,6 +94,7 @@ class DroneFlightCommander:
             res = {"status": self.drone.DroneStatus.value}
         connection.send(json.dumps(res).encode())
 
+    
     def handle_command(self, sock, data):
         try:
             data = data.decode()
@@ -187,25 +190,24 @@ class DroneFlightCommander:
                     return
 
                 elif command["command"] == "detect":
-                    vector = self.drone.ArucoNav.Detect()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % vector.X, vector.Y, vector.Rot )
+                    self.deviation = self.drone.ArucoNav.Detect()
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation.X, self.deviation.Y, self.deviation.Rot )
 
-                    if vector is None:
+                    if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
                         self.logger.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
-                        if vector.Id is not int(command["id"]):
+                        if deviation.Id is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
                         if self.markers is not None:
-                            None
-                            #handle deviation here
+                            self.deviated = True
                         conn.send(b'ACK')
                     return
 
@@ -213,9 +215,16 @@ class DroneFlightCommander:
                     if command["goal"] is not None:
                         goal = command["goal"]
                         if self.check_values(command, "velocity"):
-                            self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])
-                            conn.send(b'ACK')
-                            return
+                            if self.deviated:
+                                self.deviated = False
+                                #first rotate drone back
+                                self.logger.info("Deviation adjusted and further flight path recalculated")
+                                self.drone.mc.TurnRight(self.deviation.Rot,0.5)
+                                self.drone.mc.MoveDistance(goal[0]-self.deviation.X, goal[1]-self.deviation.Y, goal[2], command["velocity"])
+                            else:
+                                self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
+                                conn.send(b'ACK')
+                                return
 
                 elif command["command"] == "forward":
                     if self.check_values(command, "distance", "velocity"):

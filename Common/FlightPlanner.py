@@ -138,6 +138,7 @@ class FlightPlanner:
                 "command": "center",
                 "id": path[index+1].id,     #for simulator
                 }
+            #if not on end of path, do not center on marker, but detect deviation and correct for it whilst continuing flight    
             elif index != len(index)-1:
                 command = {
                 "command": "detect",
