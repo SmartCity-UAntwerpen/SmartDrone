@@ -10,7 +10,6 @@ from uuid import getnode as get_mac
 import threading
 from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException
 
-
 class DroneStatusEnum(enum.Enum):
     Init=0
     Idle=1

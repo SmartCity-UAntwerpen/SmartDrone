@@ -10,6 +10,8 @@ import Common.Marker as Marker
 import logger as dlogger
 from Common.Marker import Marker
 from Common.SocketCallback import SocketCallback
+from dronefw.aruconav import MarkerVectorClass
+
 
 
 class FlightCommanderState(enum.Enum):
@@ -19,12 +21,15 @@ class FlightCommanderState(enum.Enum):
 class DroneFlightCommander:
     """ Class based on DroneSimulator.py, more info can be found in there. """
 
-    drone = Drone.DroneClass()
+    
+
+    drone = Drone.DroneClass(self.ClosedCallback)
     logger = dlogger.create_logger()
     px = 0
     py = 0
     pz = 0
     state = FlightCommanderState.NoProblem
+    #vector = MarkerVectorClass
 
     def __init__(self, port):
         LastStatusTime = 0
@@ -46,6 +51,11 @@ class DroneFlightCommander:
         else:
             self.running = False
 
+
+    def ClosedCallback():
+        """Close all threads here for clean shutdown"""
+        exit(0)
+    
     def handle_status_update(self, sock, data):
         try:
             data = data.decode()
@@ -174,6 +184,29 @@ class DroneFlightCommander:
                 elif command["command"] == "guided_land":
                     self.drone.ArucoNav.GuidedLand()
                     conn.send(b'ACK')
+                    return
+
+                elif command["command"] == "detect":
+                    vector = self.drone.ArucoNav.Detect()
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % vector.X, vector.Y, vector.Rot )
+
+                    if vector is None:
+                        self.drone.ArucoNav.GuidedLand()
+                        self.logger.error("No marker detected")
+                        self.state = FlightCommanderState.Aborted
+                        conn.send(b'ABORT')
+                        return
+                    else:
+                        if vector.Id is not int(command["id"]):
+                            self.drone.ArucoNav.GuidedLand()
+                            self.logger.error("Wrong marker detected, abort execution!")
+                            self.state = FlightCommanderState.Aborted
+                            conn.send(b'ABORT')
+                            return
+                        if self.markers is not None:
+                            None
+                            #handle deviation here
+                        conn.send(b'ACK')
                     return
 
                 elif command["command"] == "move":

@@ -121,6 +121,7 @@ class FlightPlanner:
         flight_plan["commands"].append(command)
 
         # fly to target
+        #rekening houden ofdat einde van path is of niet...
         for index in range(0, len(path) - 1):
             delta_x = path[index + 1].x - path[index].x
             delta_y = path[index + 1].y - path[index].y
@@ -132,11 +133,19 @@ class FlightPlanner:
             }
             flight_plan["commands"].append(command)
 
-            command = {
+            if index == len(index)-1:
+                command = {
                 "command": "center",
                 "id": path[index+1].id,     #for simulator
-            }
+                }
+            elif index != len(index)-1:
+                command = {
+                "command": "detect",
+                "id": path[index+1].id,     #for simulator
+                }
             flight_plan["commands"].append(command)
+
+            
 
         # land
         command = {

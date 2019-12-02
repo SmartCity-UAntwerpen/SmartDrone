@@ -25,7 +25,7 @@ class DBConnection:
                 db="drones"
             )
         except :
-            # TODO what is password or hostname is wrong
+            # TODO: what is password or hostname is wrong
             print("make database")
             # database drones does not exist
             # so make it with the use of a .sql script
@@ -35,7 +35,7 @@ class DBConnection:
                 password=password
             )
             cursor = self.db.cursor()
-            # TODO search for way to run sql sript at once command SOURCE does not work.
+            # TODO: search for way to run sql sript at once command SOURCE does not work.
             # to be able to open this file from anywhere:
             # first take the absolute path to the current working directory
             # then split it
