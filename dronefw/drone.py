@@ -49,9 +49,10 @@ class DroneClass:
     :ivar pitch: Drone pitch angle
     :ivar yaw: Drone yaw angle
     """
-    def __init__(self):
+    def __init__(self,CloseCallBack):
         """
         Constructs an instance of a drone class
+        :param CloseCallBack: close callback function, will be called after forced close through SIGINT handler (CTRL-C)
         """
 
         self.Vbat=-1
@@ -63,6 +64,8 @@ class DroneClass:
         self.roll=0.0
         self.pitch=0.0
         self.yaw=0.0
+
+        self._CloseCallback=CloseCallBack
 
         #Gamepad init
         self.Gamepad = GamepadClass()
@@ -141,20 +144,25 @@ class DroneClass:
                 print('CTRL-C: auto land!')
                 self.mc.land(0.4,True)
                 time.sleep(4)
-                self.scf.close_link()
-                self.cf.close_link()
-                os._exit(0)
+                self.Close()
+                if (callable(self._CloseCallback)):
+                    self._CloseCallback()
             if (aborted_list['aborted']==1): #Two presses: immediate shutdown
                 aborted_list['aborted'] = 2
                 print('CTRL-C: hard abort!')
                 self.mc.EmergencyStop()
-                time.sleep(1)
-                self.scf.close_link()
-                self.cf.close_link()
-                time.sleep(1)
-                os._exit(0)
+                self.Close()
+                if (callable(self._CloseCallback)):
+                    self._CloseCallback()
+                #time.sleep(1)
+                #self.scf.close_link()
+                #self.cf.close_link()
+                #time.sleep(1)
+                #os._exit(0)
             if (aborted_list['aborted'] == 2):
                 print ("Already shutting down.")
+
+        self._original_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, _signal_handler)
 
         self.DroneStatus=DroneStatusEnum.Idle
@@ -222,16 +230,6 @@ class DroneClass:
         self.cf.param.set_value('safety.estop', '0')
         self.DroneStatus=DroneStatusEnum.Armed
 
-    def ClearEmergency(self):
-        """
-        Resets drone back to idle status from emergency status
-        """
-        if (self.DroneStatus==DroneStatusEnum.EmergencyLowBattery or
-                self.DroneStatus==DroneStatusEnum.EmergencyGamepadLoss or
-                self.DroneStatus==DroneStatusEnum.EmergencyGamepadLand or
-                self.DroneStatus==DroneStatusEnum.EmergencyGamepadStop):
-            self.DroneStatus=DroneStatusEnum.Idle
-
     def _GamepadCallback(self):
         #Left button 1: autoland
         if (self.Gamepad.L1):
@@ -257,19 +255,20 @@ class DroneClass:
         Terminates drone connection, disarms drone
         """
         #Terminate and perform safing of drone
-        print ('Terminating')
+        print ('Terminating drone class')
         time.sleep(3)
         self.cf.param.set_value('safety.estop', '1')
         self.logger_thread_stop.set()
         self.logger_thread.join()
         self.mc.close()
         self.scf.close_link()
-        print ("1")
         self.cf.close_link()
-        print ("2")
         if (self.Gamepad is not None):
             self.Gamepad.Close()
-        print ("3")
+        #Restore original ctrl-C handler
+        signal.signal(signal.SIGINT, self._original_sigint_handler)
+
+
 
 
 
