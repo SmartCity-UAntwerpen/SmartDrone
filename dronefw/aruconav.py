@@ -42,7 +42,7 @@ class ArucoNavClass:
         :param MarkerId: -1 if any marker ID should be detected, otherwise an ID value (NOT IMPLEMENTED)
 
         :returns:
-        None if no valid marker has been detected. Otherwise returns an instance of MarkerVectorClass
+        None if no valid marker has been detected. Otherwise returns an array [id, x, y, yaw]
         containing the relative vector to the detected marker.
         """
         self.MarkerVectorArray=None
