@@ -28,7 +28,7 @@ class DroneFlightCommander:
     py = 0
     pz = 0
     state = FlightCommanderState.NoProblem
-    deviation = None
+    deviation = [0,0,0,0]
 
     def __init__(self, port):
         LastStatusTime = 0
@@ -191,7 +191,7 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation[1], self.deviation[2], self.deviation[3] )
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
@@ -222,7 +222,10 @@ class DroneFlightCommander:
                                 self.drone.mc.TurnRight(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
                                 self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                conn.send(b'ACK')
+                                return                            
                             else:
+                                self.logger.info("No need to adjust for deviation")
                                 self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')
                                 return
@@ -314,7 +317,7 @@ class DroneFlightCommander:
             if self.drone.DroneStatus is Drone.DroneStatusEnum.Flying:
                 self.drone.ArucoNav.GuidedLand()
             self.state = FlightCommanderState.Aborted
-            self.logger.error("Command aborted.")
+            self.logger.error("Command aborted")
             conn.send(b'ABORT')
 
     def wait_for_idle(self,timeout):

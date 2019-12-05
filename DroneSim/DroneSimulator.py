@@ -21,7 +21,7 @@ class DroneFlightCommander:
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
-    deviation = None
+    deviation = [0,0,0,0]
 
     def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"
@@ -179,7 +179,7 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation[1], self.deviation[2], self.deviation[3] )
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
@@ -210,6 +210,8 @@ class DroneFlightCommander:
                                 self.drone.mc.TurnRight(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
                                 self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                conn.send(b'ACK')
+                                return
                             else:
                                 self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')
