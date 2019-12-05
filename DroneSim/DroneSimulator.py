@@ -6,6 +6,7 @@ import DroneSim.Drone as Drone
 import signal, json, time, threading
 from Common.SocketCallback import SocketCallback
 from Common.Marker import Marker
+from dronefw.aruconav import MarkerVectorClass
 
 
 class FlightCommanderState(enum.Enum):
@@ -21,6 +22,7 @@ class DroneFlightCommander:
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
+    deviation = MarkerVectorClass
 
     def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"
@@ -32,6 +34,7 @@ class DroneFlightCommander:
         self.status_socket.start()
         self.markers = None
         self.auto_arm = auto_arm
+        self.deviated = False
         self.drone.black_box.info("Drone simulator started.")
         if self.auto_arm: self.drone.black_box.info("Auto arm enabled.")
 
@@ -174,6 +177,28 @@ class DroneFlightCommander:
                                 self.drone.guided_land(command["velocity"], marker.x, marker.y)
                                 conn.send(b'ACK')
                                 return
+
+                elif command["command"] == "detect":
+                    self.deviation = self.drone.ArucoNav.Detect()
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation.X, self.deviation.Y, self.deviation.Rot )
+
+                    if deviation is None:
+                        self.drone.ArucoNav.GuidedLand()
+                        self.logger.error("No marker detected")
+                        self.state = FlightCommanderState.Aborted
+                        conn.send(b'ABORT')
+                        return
+                    else:
+                        if deviation.Id is not int(command["id"]):
+                            self.drone.ArucoNav.GuidedLand()
+                            self.logger.error("Wrong marker detected, abort execution!")
+                            self.state = FlightCommanderState.Aborted
+                            conn.send(b'ABORT')
+                            return
+                        if self.markers is not None:
+                            self.deviated = True
+                        conn.send(b'ACK')
+                    return
 
                 elif command["command"] == "move":
                     if command["goal"] is not None:

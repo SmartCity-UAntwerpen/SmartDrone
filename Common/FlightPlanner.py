@@ -121,7 +121,7 @@ class FlightPlanner:
         flight_plan["commands"].append(command)
 
         # fly to target
-        #rekening houden ofdat einde van path is of niet...
+        #see if path has endend, only on end recenter. In middle detect deviation.
         for index in range(0, len(path) - 1):
             delta_x = path[index + 1].x - path[index].x
             delta_y = path[index + 1].y - path[index].y

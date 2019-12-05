@@ -971,3 +971,4 @@
 2019-11-21 17:57:38,650 - [DRONE_SIM] Level 15 - 	handle_status_update -  {'action': 'send_position'}
 2019-11-21 17:57:38,650 - [DRONE_SIM] Level 15 - 	handle_status_update -  {'action': 'send_status'}
 2019-11-21 17:57:40,652 - [DRONE_SIM] Level 15 - 	handle_status_update -  {'action': 'send_position'}
+2019-12-05 11:53:37,533 - [DRONE_SIM] INFO - 	__init__ -  Drone simulator started.

@@ -134,6 +134,7 @@ class DroneFlightCommander:
         return True
 
     def perform_action(self, command, conn):
+        """translates commands of flight plan to actions on the drone"""
         try:
             self.logger.log(15, command["command"])
             if command["command"] == "set_position_marker":
