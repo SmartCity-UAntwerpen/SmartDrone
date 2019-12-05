@@ -178,18 +178,20 @@ class DroneFlightCommander:
                                 return
 
                 elif command["command"] == "detect":
-                    self.deviation = self.drone.ArucoNav.DetectArray()
+                    goal = command["goal"]
+                    id = command["id"]
+                    self.deviation = self.drone.DetectArray(id,goal)
                     self.drone.black_box.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
-                        self.drone.ArucoNav.GuidedLand()
+                        self.drone.GuidedLand()
                         self.drone.black_box.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
                         if deviation.Id is not int(command["id"]):
-                            self.drone.ArucoNav.GuidedLand()
+                            self.drone.GuidedLand()
                             self.drone.black_box.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')

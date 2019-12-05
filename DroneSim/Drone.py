@@ -164,6 +164,21 @@ class Drone:
         self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
+    def DetectArray(self, MarkerId, goal ):
+        """Detects the deviation and returns it as an array
+            param marker id: id of the marker
+            param goal: the coordinates of the marker to which you want to calculate the deviation
+        """
+        self.black_box.info("Detecting deviation to marker %d" % MarkerId)
+        fov = 60
+        view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
+        if goal[0] - view_distance / 2 <= self.x <= goal[0] + view_distance / 2 and goal[1] - view_distance / 2 <= self.y <= goal[1] + view_distance / 2:
+            deviation[0] = float(goal[0] - self.x)  # x deviation
+            deviation[1] = float(goal[1] - self.y)  # y deviation
+        deviation[2]= self.yaw                      # yaw deviation 
+        return deviation
+        
+
     def center(self, x, y):
         # different from the real center function, the dronesimulator will tranlate the marker id to the correct coordinates
         fov = 60

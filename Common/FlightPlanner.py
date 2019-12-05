@@ -142,6 +142,7 @@ class FlightPlanner:
             else:
                 command = {
                 "command": "detect",
+                "goal":(path[index+1].x,path[index+1].y, path[index+1].z ), #for simulator
                 "id": path[index+1].id,     #for simulator
                 }
             flight_plan["commands"].append(command)
