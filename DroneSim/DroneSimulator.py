@@ -211,7 +211,10 @@ class DroneFlightCommander:
                                 self.deviated = False
                                 #first rotate drone back
                                 self.drone.black_box.info("Deviation adjusted and further flight path recalculated")
-                                self.drone.turnRight(self.deviation[3],0.5)
+                                if self.deviation[3]>0:
+                                    self.drone.turnRight(self.deviation[3],0.5)
+                                else:
+                                    self.drone.turnLeft(self.deviation[3,0.5])
                                 #calculate new distance according to deviation from marker
                                 self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                                 conn.send(b'ACK')
