@@ -21,7 +21,6 @@ class DroneFlightCommander:
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
-    deviation = [0,0,0,0]
 
     def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"
@@ -34,6 +33,7 @@ class DroneFlightCommander:
         self.markers = None
         self.auto_arm = auto_arm
         self.deviated = False
+        self.deviation = [0,0,0,0]
         self.drone.black_box.info("Drone simulator started.")
         if self.auto_arm: self.drone.black_box.info("Auto arm enabled.")
 
@@ -179,18 +179,18 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
+                    self.drone.black_box.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
-                        self.logger.error("No marker detected")
+                        self.drone.black_box.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
                         if deviation.Id is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
-                            self.logger.error("Wrong marker detected, abort execution!")
+                            self.drone.black_box.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
@@ -206,15 +206,15 @@ class DroneFlightCommander:
                             if self.deviated:
                                 self.deviated = False
                                 #first rotate drone back
-                                self.logger.info("Deviation adjusted and further flight path recalculated")
-                                self.drone.TurnRight(self.deviation[3],0.5)
+                                self.drone.black_box.info("Deviation adjusted and further flight path recalculated")
+                                self.drone.turnRight(self.deviation[3],"0.5")
                                 #calculate new distance according to deviation from marker
-                                self.drone.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                                 conn.send(b'ACK')
                                 return
                             else:
-                                self.logger.info("No need to adjust for deviation")
-                                self.drone.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
+                                self.drone.black_box.info("No need to adjust for deviation")
+                                self.drone.moveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')
                                 return
 
@@ -288,6 +288,7 @@ class DroneFlightCommander:
             if type(e) == ValueError:
                 self.drone.black_box.error("Received wrong command message (no JSON).")
             self.state = FlightCommanderState.Aborted
+            self.drone.black_box.error(e)
             self.drone.black_box.error("Command aborted.")
 
     def wait_for_idle(self):

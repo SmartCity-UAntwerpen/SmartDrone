@@ -133,7 +133,7 @@ class FlightPlanner:
             }
             flight_plan["commands"].append(command)
 
-            if index == (len(path)-1):
+            if (index+1) == (len(path)-1):
                 command = {
                 "command": "center",
                 "id": path[index+1].id,     #for simulator
