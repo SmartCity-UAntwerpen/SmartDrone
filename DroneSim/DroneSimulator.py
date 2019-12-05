@@ -179,19 +179,21 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     goal = command["goal"]
+                    x= goal[0]
+                    y= goal[1]
                     id = command["id"]
-                    self.deviation = self.drone.DetectArray(id,goal)
-                    self.drone.black_box.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
+                    self.deviation = self.drone.DetectArray(id,x,y)
+                    self.drone.black_box.info("Marker detected. Deviation to marker: X= %f, Y= %f, Rot= %f " % (self.deviation[1], self.deviation[2], self.deviation[3]) )
 
-                    if deviation is None:
-                        self.drone.GuidedLand()
+                    if self.deviation is None:
+                        self.drone.guided_land()
                         self.drone.black_box.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
-                        if deviation.Id is not int(command["id"]):
-                            self.drone.GuidedLand()
+                        if self.deviation[0] is not int(command["id"]):
+                            self.drone.guided_land()
                             self.drone.black_box.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
@@ -209,7 +211,7 @@ class DroneFlightCommander:
                                 self.deviated = False
                                 #first rotate drone back
                                 self.drone.black_box.info("Deviation adjusted and further flight path recalculated")
-                                self.drone.turnRight(self.deviation[3],"0.5")
+                                self.drone.turnRight(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
                                 self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                                 conn.send(b'ACK')

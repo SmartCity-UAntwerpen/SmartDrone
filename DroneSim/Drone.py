@@ -165,7 +165,7 @@ class Drone:
         self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
-    def DetectArray(self, MarkerId, goal ):
+    def DetectArray(self, MarkerId, x,y ):
         """Detects the deviation and returns it as an array
             param marker id: id of the marker
             param goal: the coordinates of the marker to which you want to calculate the deviation
@@ -174,10 +174,11 @@ class Drone:
         fov = 60
         self.deviation[0] = MarkerId
         view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
-        if goal[0] - view_distance / 2 <= self.x <= goal[0] + view_distance / 2 and goal[1] - view_distance / 2 <= self.y <= goal[1] + view_distance / 2:
-            self.deviation[1] = float(goal[0] - self.x)  # x deviation
-            self.deviation[2] = float(goal[1] - self.y)  # y deviation
-        self.deviation[3]= self.yaw                      # yaw deviation 
+        if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
+            self.deviation[1] = float(x - self.x)  # x deviation
+            self.deviation[2] = float(y - self.y)  # y deviation
+
+        self.deviation[3]= self.yaw 
         return self.deviation
         
 

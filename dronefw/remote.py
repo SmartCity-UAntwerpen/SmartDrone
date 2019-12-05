@@ -191,7 +191,7 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray(command["id"])
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % self.deviation[1], self.deviation[2], self.deviation[3] )
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= %d " % (self.deviation[1], self.deviation[2], self.deviation[3] ))
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
