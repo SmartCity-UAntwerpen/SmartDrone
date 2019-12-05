@@ -22,7 +22,7 @@ class DroneFlightCommander:
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
-    deviation = MarkerVectorClass
+    deviation = None
 
     def __init__(self, port, auto_arm=False):
         ip = "127.0.0.1"

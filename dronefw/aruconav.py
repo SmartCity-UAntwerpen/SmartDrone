@@ -1,5 +1,6 @@
-from drone import *
 from arucolib import *
+from drone import *
+
 
 class MarkerVectorClass:
     """
@@ -34,6 +35,40 @@ class ArucoNavClass:
         self.RotRate=20
         self._DebugPrint = False
 
+    def DetectArray(self,MarkerId=-1,PipelineFlush=True,NumTries=40,CalcYaw=True):
+        """
+        Try to detect aruco markers under the drone
+
+        :param MarkerId: -1 if any marker ID should be detected, otherwise an ID value (NOT IMPLEMENTED)
+
+        :returns:
+        None if no valid marker has been detected. Otherwise returns an instance of MarkerVectorClass
+        containing the relative vector to the detected marker.
+        """
+        self.MarkerVectorArray=None
+
+        if (PipelineFlush==True):
+            for a in range(0, 15):
+                num = self._Detector.Detect()
+        for a in range(0, NumTries):
+            num = self._Detector.Detect()
+            if (num > 0):
+                break;
+
+        if (num > 0):
+            self.MarkerVectorArray[0]=self._Detector.MarkerList[0].MarkerId
+            self.MarkerVectorArray[1]= -self._Detector.MarkerList[0].TVecX
+            self.MarkerVectorArray[2] = -self._Detector.MarkerList[0].TVecY
+            if (CalcYaw==True):
+                self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)
+            if (self._DebugPrint == True):
+                print ('Marker:(%s,%s,%s)' % (self.MarkerVectorArray[1],self.MarkerVectorArray[2],self.MarkerVectorArray[3]))
+            return self.MarkerVectorArray
+        else:
+            if (self._DebugPrint == True):
+                print("None detected")
+            return None
+
     def Detect(self,MarkerId=-1,PipelineFlush=True,NumTries=40,CalcYaw=True):
         """
         Try to detect aruco markers under the drone
@@ -67,6 +102,7 @@ class ArucoNavClass:
             if (self._DebugPrint == True):
                 print("None detected")
             return None
+    
 
     def Center(self,MarkerId=-1,Velocity=0.5):
         """
