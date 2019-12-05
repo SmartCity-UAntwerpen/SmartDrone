@@ -6,7 +6,6 @@ import DroneSim.Drone as Drone
 import signal, json, time, threading
 from Common.SocketCallback import SocketCallback
 from Common.Marker import Marker
-from dronefw.aruconav import MarkerVectorClass
 
 
 class FlightCommanderState(enum.Enum):
@@ -179,8 +178,8 @@ class DroneFlightCommander:
                                 return
 
                 elif command["command"] == "detect":
-                    self.deviation = self.drone.ArucoNav.Detect()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation.X, self.deviation.Y, self.deviation.Rot )
+                    self.deviation = self.drone.ArucoNav.DetectArray()
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
@@ -204,9 +203,17 @@ class DroneFlightCommander:
                     if command["goal"] is not None:
                         goal = command["goal"]
                         if self.check_values(command, "velocity"):
-                            self.drone.moveDistance(goal[0], goal[1], goal[2], command["velocity"])
-                            conn.send(b'ACK')
-                            return
+                            if self.deviated:
+                                self.deviated = False
+                                #first rotate drone back
+                                self.logger.info("Deviation adjusted and further flight path recalculated")
+                                self.drone.mc.TurnRight(self.deviation[3],0.5)
+                                #calculate new distance according to deviation from marker
+                                self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                            else:
+                                self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
+                                conn.send(b'ACK')
+                                return
 
                 elif command["command"] == "forward":
                     if self.check_values(command, "distance", "velocity"):

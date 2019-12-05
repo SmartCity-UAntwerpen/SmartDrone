@@ -10,7 +10,6 @@ import Common.Marker as Marker
 import logger as dlogger
 from Common.Marker import Marker
 from Common.SocketCallback import SocketCallback
-from dronefw.aruconav import MarkerVectorClass
 
 
 
@@ -29,7 +28,7 @@ class DroneFlightCommander:
     py = 0
     pz = 0
     state = FlightCommanderState.NoProblem
-    deviation = MarkerVectorClass
+    deviation = None
 
     def __init__(self, port):
         LastStatusTime = 0
@@ -191,8 +190,8 @@ class DroneFlightCommander:
                     return
 
                 elif command["command"] == "detect":
-                    self.deviation = self.drone.ArucoNav.Detect()
-                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation.X, self.deviation.Y, self.deviation.Rot )
+                    self.deviation = self.drone.ArucoNav.DetectArray()
+                    self.logger.info("Marker detected. Deviation to marker: X= %d, Y= %d, Rot= % " % self.deviation[1], self.deviation[2], self.deviation[3] )
 
                     if deviation is None:
                         self.drone.ArucoNav.GuidedLand()
@@ -201,7 +200,7 @@ class DroneFlightCommander:
                         conn.send(b'ABORT')
                         return
                     else:
-                        if deviation.Id is not int(command["id"]):
+                        if deviation[0] is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
@@ -220,9 +219,9 @@ class DroneFlightCommander:
                                 self.deviated = False
                                 #first rotate drone back
                                 self.logger.info("Deviation adjusted and further flight path recalculated")
-                                self.drone.mc.TurnRight(self.deviation.Rot,0.5)
+                                self.drone.mc.TurnRight(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
-                                self.drone.mc.MoveDistance(goal[0]+self.deviation.X, goal[1]+self.deviation.Y, goal[2], command["velocity"])
+                                self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                             else:
                                 self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')
