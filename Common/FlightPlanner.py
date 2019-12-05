@@ -126,10 +126,18 @@ class FlightPlanner:
             delta_x = path[index + 1].x - path[index].x
             delta_y = path[index + 1].y - path[index].y
             delta_z = path[index + 1].z - path[index].z
+
+            x_dir = path[len(path)-1].x-path[0].x
+            y_dir = path[len(path)-1].y-path[0].y
+            if x_dir > 0:
+                direction = "RaisingX"
+
             command = {
                 "command": "move",
                 "goal": (delta_x, delta_y, delta_z),
-                "velocity": 0.5
+                "velocity": 0.5,
+                "direction" : direction ,     #needed for path recalc after deviation
+
             }
             flight_plan["commands"].append(command)
 
@@ -143,7 +151,7 @@ class FlightPlanner:
                 command = {
                 "command": "detect",
                 "goal":(path[index+1].x,path[index+1].y, path[index+1].z ), #for simulator
-                "id": path[index+1].id,     #for simulator
+                "id": path[index+1].id, #for simulator
                 }
             flight_plan["commands"].append(command)
 
