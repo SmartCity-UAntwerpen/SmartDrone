@@ -30,6 +30,7 @@ class Drone:
     """
     x, y, z = 0, 0, 0
     pitch, yaw, roll = 0, 0, 0
+    deviation= [0,0,0,0]
     flying = False
     status = DroneStatusEnum.Idle  # or init? no real initialization in simulation
     black_box = BlackBox.create_black_box()
@@ -171,12 +172,13 @@ class Drone:
         """
         self.black_box.info("Detecting deviation to marker %d" % MarkerId)
         fov = 60
+        self.deviation[0] = MarkerId
         view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
         if goal[0] - view_distance / 2 <= self.x <= goal[0] + view_distance / 2 and goal[1] - view_distance / 2 <= self.y <= goal[1] + view_distance / 2:
-            deviation[0] = float(goal[0] - self.x)  # x deviation
-            deviation[1] = float(goal[1] - self.y)  # y deviation
-        deviation[2]= self.yaw                      # yaw deviation 
-        return deviation
+            self.deviation[1] = float(goal[0] - self.x)  # x deviation
+            self.deviation[2] = float(goal[1] - self.y)  # y deviation
+        self.deviation[3]= self.yaw                      # yaw deviation 
+        return self.deviation
         
 
     def center(self, x, y):
