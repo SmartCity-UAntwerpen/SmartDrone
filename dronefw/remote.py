@@ -218,7 +218,7 @@ class DroneFlightCommander:
                             if self.deviated:
                                 self.deviated = False
                                 #first rotate drone back
-                                self.logger.info("Deviation adjusted and further flight path recalculated")
+                                self.logger.info("Flight path recalculated")
                                 if self.deviation[3]>0:
                                     self.drone.mc.TurnRight(self.deviation[3],0.5)
                                 else:
