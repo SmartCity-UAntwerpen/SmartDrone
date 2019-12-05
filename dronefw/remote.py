@@ -220,7 +220,8 @@ class DroneFlightCommander:
                                 #first rotate drone back
                                 self.logger.info("Deviation adjusted and further flight path recalculated")
                                 self.drone.mc.TurnRight(self.deviation.Rot,0.5)
-                                self.drone.mc.MoveDistance(goal[0]-self.deviation.X, goal[1]-self.deviation.Y, goal[2], command["velocity"])
+                                #calculate new distance according to deviation from marker
+                                self.drone.mc.MoveDistance(goal[0]+self.deviation.X, goal[1]+self.deviation.Y, goal[2], command["velocity"])
                             else:
                                 self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')

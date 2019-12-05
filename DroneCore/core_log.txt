@@ -539,3 +539,7 @@
 2019-11-21 17:57:40,652 - [DRONE_CORE] Level 15 - send_position_update - {'id': 0, 'action': 'position_update', 'position': [0.0, 0.0, 0.0]}
 2019-11-21 17:57:40,653 - [DRONE_CORE] WARNING - get_drone_status - Status update failed.
 2019-11-21 17:57:41,019 - [DRONE_CORE] INFO - close - Closing controller.
+2019-12-05 11:53:38,109 - [DRONE_CORE] INFO - start_controller - Start controller.
+2019-12-05 11:53:43,762 - [DRONE_CORE] ERROR - start_controller - Connection with backend failed.
+2019-12-05 11:53:47,772 - [DRONE_CORE] WARNING - close - Drone lost connection with backend, not removed from backend.
+2019-12-05 11:53:47,772 - [DRONE_CORE] INFO - close - Closing controller.
