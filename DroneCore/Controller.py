@@ -267,7 +267,7 @@ class Controller(threading.Thread):
                 try:
                     if self.current_marker_id != job["point1"]:
                         # first go to point1
-                        self.logger.info("Not on point1, flying to point1")
+                        self.logger.info("Not on %d, flying to %d" % (job["point1"],job["point1"]))
                         self.fly_from_to(self.current_marker_id, job["point1"])
 
                     self.fly_from_to(job["point1"], job["point2"])

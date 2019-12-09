@@ -136,7 +136,7 @@ class FlightPlanner:
                 "command": "move",
                 "goal": (delta_x, delta_y, delta_z),
                 "velocity": 0.5,
-                "direction" : direction ,     #needed for path recalc after deviation
+                "direction" : direction ,     #needed for path recalculation after deviation
 
             }
             flight_plan["commands"].append(command)

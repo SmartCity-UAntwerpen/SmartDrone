@@ -224,7 +224,7 @@ class DroneFlightCommander:
                                 else:
                                     self.drone.mc.TurnLeft(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
-                                if command["direction"] == "RaisingX":
+                                if command["direction"] == "RaisingX": #Direction given as json argument. Calculated in path planner. 
                                     self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                                 else:
                                     self.drone.mc.MoveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
