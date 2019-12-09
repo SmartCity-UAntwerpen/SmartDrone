@@ -177,14 +177,19 @@ class Drone:
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
+            self.black_box.info("Deviation to marker, x: %f, y: %f, yaw: %f" % (x_dev, y_dev, self.yaw))
             #calculate detected path according to rotation. 
             #Note: Drone first rotates back to desired angle before continuing flight.
             x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
             y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
+            self.black_box.info("Flight correction, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
             self.deviation[1] = x_corr  # x deviation
             self.deviation[2] = y_corr  # y deviation
-
-        self.deviation[3]= self.yaw 
+            self.deviation[3]= self.yaw 
+        else:
+            self.black_box.info("Detection failed, no marker found.")
+            self.deviation= [0,0,0,0]
+   
         return self.deviation
         
 
