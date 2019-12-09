@@ -1,5 +1,6 @@
 from arucolib import *
 from drone import *
+import math
 
 
 class MarkerVectorClass:
@@ -33,7 +34,7 @@ class ArucoNavClass:
         self._Drone=Drone
         self._Detector=Detector
         self.RotRate=20
-        self._DebugPrint = False
+        self._DebugPrint = True
 
     def DetectArray(self,MarkerId=-1,PipelineFlush=True,NumTries=40,CalcYaw=True):
         """
@@ -42,8 +43,12 @@ class ArucoNavClass:
         :param MarkerId: -1 if any marker ID should be detected, otherwise an ID value (NOT IMPLEMENTED)
 
         :returns:
-        None if no valid marker has been detected. Otherwise returns an array [id, x, y, yaw]
+        None if no valid marker has been detected. Otherwise returns an array [id, x, y, MarkerYaw]
         containing the relative vector to the detected marker.
+
+        :note:
+        x and Y are calculated taking into account the yaw rotation of the drone to the marker 
+
         """
         self.MarkerVectorArray=None
 
@@ -57,12 +62,18 @@ class ArucoNavClass:
 
         if (num > 0):
             self.MarkerVectorArray[0]=self._Detector.MarkerList[0].MarkerId
-            self.MarkerVectorArray[1]= -self._Detector.MarkerList[0].TVecX
-            self.MarkerVectorArray[2] = -self._Detector.MarkerList[0].TVecY
-            if (CalcYaw==True):
-                self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)
+            x_dev= self._Detector.MarkerList[0].TVecX #x deviation
+            y_dev = self._Detector.MarkerList[0].TVecY #y deviation
+            self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)       
+            #calculate detected path according to rotation to marker (MarkerYaw). 
+             #Note: Drone first rotates back to desired angle before continuing flight.
+            x_corr = x_dev*math.cos(self.MarkerVectorArray[3]) + y_dev*math.sin(self.MarkerVectorArray[3])
+            y_corr = x_dev*math.sin(self.MarkerVectorArray[3]) + y_dev*math.cos(self.MarkerVectorArray[3])
+            self.MarkerVectorArray[1] = x_corr
+            self.MarkerVectorArray[2] = y_corr
             if (self._DebugPrint == True):
-                print ('Marker:(%s,%s,%s)' % (self.MarkerVectorArray[1],self.MarkerVectorArray[2],self.MarkerVectorArray[3]))
+                print ('Marker before angle calculation:(%s,%s,%s)' % (x_dev,y_dev,self.MarkerVectorArray[3]))
+                print ('Marker after angle calculation:(%s,%s,%s)' % (self.MarkerVectorArray[1],self.MarkerVectorArray[2],self.MarkerVectorArray[3]))
             return self.MarkerVectorArray
         else:
             if (self._DebugPrint == True):

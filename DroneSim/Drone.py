@@ -175,8 +175,14 @@ class Drone:
         self.deviation[0] = MarkerId
         view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
-            self.deviation[1] = float(x - self.x)  # x deviation
-            self.deviation[2] = float(y - self.y)  # y deviation
+            x_dev = float(x - self.x)
+            y_dev = float(y - self.y)
+            #calculate detected path according to rotation. 
+            #Note: Drone first rotates back to desired angle before continuing flight.
+            x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
+            y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
+            self.deviation[1] = x_corr  # x deviation
+            self.deviation[2] = y_corr  # y deviation
 
         self.deviation[3]= self.yaw 
         return self.deviation
