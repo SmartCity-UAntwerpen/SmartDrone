@@ -169,6 +169,7 @@ class FlightPlanner:
 
         return flight_plan
 
+    #NOT USED ANYMORE
     def calculate_cost(self, id_marker1, id_marker2):
         if self.G is not None:
             m1 = self.markers[id_marker1]
@@ -185,8 +186,9 @@ class FlightPlanner:
 
     def calculate_cost_time(self, id_marker1, id_marker2):
         """
-        calculate the total time it needs to take the route
-        Dependent on the fly speed and distance
+        calculate the total time it needs to take the route in seconds
+        Dependent on the speed and route distance
+        If no path exists, 1000 is returned
         :param id_marker1: start point
         :param id_marker2: end point   
         """
@@ -203,11 +205,12 @@ class FlightPlanner:
             try:
                 path = nx.dijkstra_path(self.G, m1, m2)
                 for index in range(0, len(path) - 1):
+                    #calculate path length
                     delta_x += abs(path[index + 1].x - path[index].x)
                     delta_y += abs(path[index + 1].y - path[index].y)
                 
                 time = delta_x/fly_speed+delta_y/fly_speed + 2*(height/takeoff_speed)+ 4  
-                                     #factor takes into account the duration for centering during takeoff and landing.
+                #factor 4 takes into account the duration for centering during takeoff and landing.
             except:
                 time = 1000
             return time
