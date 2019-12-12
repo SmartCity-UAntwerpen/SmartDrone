@@ -83,6 +83,20 @@ def get_location(drone_id):
         location = global_backend.db.get_location(int(drone_id))
     return json.dumps({"location": location})
 
+@app.route('/getlocations/')
+def get_locations():
+    global global_backend
+    locations = {
+            "locations": [],
+        }
+
+    for drone_id in global_backend.drones.keys():
+        location = global_backend.db.get_location(int(drone_id))
+        locations["locations"].append(location)
+    return json.dumps(locations)
+
+
+
 @app.route('/job/cancel/<job_id>')
 def cancel_job(job_id):
     global global_backend
