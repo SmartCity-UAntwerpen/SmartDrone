@@ -48,4 +48,4 @@ Folder structure:
 
 
 ## Dependencies
-Command: `#pip install -r requirements.txt`
+Command: `#pip3 install -r requirements.txt`
