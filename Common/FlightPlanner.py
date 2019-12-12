@@ -187,8 +187,7 @@ class FlightPlanner:
     def calculate_cost_time(self, id_marker1, id_marker2):
         """
         calculate the total time it needs to take the route in seconds
-        Dependent on the speed and route distance
-        If no path exists, 1000 is returned
+        :return: estimated travel time
         :param id_marker1: start point
         :param id_marker2: end point   
         """
