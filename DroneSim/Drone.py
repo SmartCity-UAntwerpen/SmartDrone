@@ -177,6 +177,7 @@ class Drone:
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
+            self.black_box.info("current position,x: %f, y: %f, yaw: %f" % (self.x, self.y, self.z))
             self.black_box.info("Deviation to marker, x: %f, y: %f, yaw: %f" % (x_dev, y_dev, self.yaw))
             #calculate detected path according to rotation. 
             #Note: Drone first rotates back to desired angle before continuing flight.
