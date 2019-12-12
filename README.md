@@ -48,5 +48,4 @@ Folder structure:
 
 
 ## Dependencies
-See requirements.txt
-pip install -r requirements.txt
+Command: `#pip install -r requirements.txt`
