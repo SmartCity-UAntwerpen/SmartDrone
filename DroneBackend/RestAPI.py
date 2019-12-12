@@ -78,7 +78,9 @@ def get_progress(job_id):
 @app.route('/getlocation/<drone_id>')
 def get_location(drone_id):
     global global_backend
-    location = global_backend.db.get_location(int(drone_id))
+    location = "invalid drone id"
+    if int(drone_id) in global_backend.drones.keys():
+        location = global_backend.db.get_location(int(drone_id))
     return json.dumps({"location": location})
 
 @app.route('/job/cancel/<job_id>')
