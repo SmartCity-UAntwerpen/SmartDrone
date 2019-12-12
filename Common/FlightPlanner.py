@@ -93,6 +93,7 @@ class FlightPlanner:
         """
         m1 = self.markers[id_marker1]
         m2 = self.markers[id_marker2]
+        direction = ""
 
         try:
             path = nx.dijkstra_path(self.G, m1, m2)

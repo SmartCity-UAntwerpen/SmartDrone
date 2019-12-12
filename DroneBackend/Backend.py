@@ -189,7 +189,7 @@ class Backend():
             job_id = list(self.jobs.keys()).pop(0)
 
             job = self.jobs[job_id]
-            job["action"] = "no_plan_job"       # backend now does not make the flightplan, in the future the flight plan could be created here
+            job["action"] = "no_plan_job"      
             self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
             self.logger.info("Deploying job to drone [id]: %d, [job_id] %d" % (drone_id, job_id))
 
