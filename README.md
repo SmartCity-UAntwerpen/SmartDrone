@@ -49,11 +49,4 @@ Folder structure:
 
 ## Dependencies
 See requirements.txt
-* pymysql
-* networkx
-* flask
-* pygame
-* paho.mqtt.client
-* uuid
-* numpy
-* requests
+pip install -r requirements.txt
