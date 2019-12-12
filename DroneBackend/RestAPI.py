@@ -44,7 +44,7 @@ def get_markers():
 @app.route('/<pidstart>/<pidend>')
 def calculate_cost(pidstart, pidend):
     global global_backend
-    cost = global_backend.flightplanner.calculate_cost(int(pidstart), int(pidend))
+    cost = global_backend.flightplanner.calculate_cost_time(int(pidstart), int(pidend))
     return json.dumps({"cost": int(cost)})
 
 
