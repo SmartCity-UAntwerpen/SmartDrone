@@ -182,3 +182,33 @@ class FlightPlanner:
             return int(map(cost, 0, self.longest_path_cost, 0, 100))
         else:
             return 100000
+
+    def calculate_cost_time(self, id_marker1, id_marker2):
+        """
+        calculate the total time it needs to take the route
+        Dependent on the fly speed and distance
+        :param id_marker1: start point
+        :param id_marker2: end point   
+        """
+        if self.G is not None:
+            m1 = self.markers[id_marker1]
+            m2 = self.markers[id_marker2]
+            delta_x = 0
+            delta_y = 0
+            delta_z = 0
+            fly_speed = 0.5
+            takeoff_speed = 0.2
+            height = 1
+            time = 0
+            try:
+                path = nx.dijkstra_path(self.G, m1, m2)
+                for index in range(0, len(path) - 1):
+                    delta_x += abs(path[index + 1].x - path[index].x)
+                    delta_y += abs(path[index + 1].y - path[index].y)
+                
+                time = delta_x/fly_speed+delta_y/fly_speed
+                time += 2*(height/takeoff_speed)            
+                time =+ 4                       #factor takes into account the duration for centering during takeoff and landing.
+            except:
+                time = 1000
+            return time

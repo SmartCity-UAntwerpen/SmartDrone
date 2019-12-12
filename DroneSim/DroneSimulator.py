@@ -220,6 +220,7 @@ class DroneFlightCommander:
                                     self.drone.moveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
                                 else:
                                     self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                self.drone.black_box.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
 
                                 conn.send(b'ACK')
                                 return
