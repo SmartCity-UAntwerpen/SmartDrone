@@ -48,6 +48,7 @@ Folder structure:
 
 
 ## Dependencies
+See requirements.txt
 * pymysql
 * networkx
 * flask
