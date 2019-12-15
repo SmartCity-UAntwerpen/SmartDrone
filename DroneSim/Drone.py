@@ -83,6 +83,7 @@ class Drone:
             velocity = MAX_VELOCITY
 
         self.moveDistance(distance, 0, 0, velocity)
+        
 
     def backward(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -94,6 +95,8 @@ class Drone:
             velocity = MAX_VELOCITY
 
         self.moveDistance(-distance, 0, 0, velocity)
+        
+
 
     def left(self, distance=None, velocity=VELOCITY):
         if distance is None or distance < 0:
@@ -148,8 +151,8 @@ class Drone:
         flight_time = angle_degrees / rate
         self.yaw += angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
-        self.x += np.random.normal(0, 0.2)
-        self.y += np.random.normal(0, 0.2)
+        #self.x += np.random.normal(0, 0.2)
+        #self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
     def turnRight(self, angle_degrees=None, rate=RATE):
@@ -161,24 +164,28 @@ class Drone:
         flight_time = angle_degrees / rate
         self.yaw -= angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
-        self.x += np.random.normal(0, 0.2)
-        self.y += np.random.normal(0, 0.2)
+        #self.x += np.random.normal(0, 0.2)
+        #self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
     def DetectArray(self, MarkerId, x,y ):
         """Detects the deviation and returns it as an array
-            param marker id: id of the marker
-            param goal: the coordinates of the marker to which you want to calculate the deviation
+            :param marker id: id of the marker
+            :param goal: the coordinates of the marker to which you want to calculate the deviation
         """
         self.black_box.info("Detecting deviation to marker %d" % MarkerId)
+        self.black_box.info("DEBUG: deviating position")
+        self.x -= 0.05
+        self.y += 0.05
+
         fov = 60
         self.deviation[0] = MarkerId
         view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
-            self.black_box.info("current position,x: %f, y: %f, yaw: %f" % (self.x, self.y, self.z))
-            self.black_box.info("Deviation to marker, x: %f, y: %f, yaw: %f" % (x_dev, y_dev, self.yaw))
+
+            self.yaw = 10
             #calculate detected path according to rotation. 
             #Note: Drone first rotates back to desired angle before continuing flight.
             x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
@@ -186,7 +193,7 @@ class Drone:
             self.black_box.info("Flight correction, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
             self.deviation[1] = x_corr  # x deviation
             self.deviation[2] = y_corr  # y deviation
-            self.deviation[3]= self.yaw 
+            #self.deviation[3]= self.yaw 
         else:
             self.black_box.info("Detection failed, no marker found.")
             self.deviation= [0,0,0,0]
@@ -209,7 +216,7 @@ class Drone:
             self.black_box.info("Centering failed, no marker found.")
 
     def moveDistance(self, distance_x_m, distance_y_m, distance_z_m, velocity=0.5, deviation_mean=0,
-                     deviation_sigma=0.05):
+                     deviation_sigma=0.0):
         """
         Move distance specified by the distance x,y,z parameters [m], the deviation_mean and deviation_simgma control
         the randomness of the movement
@@ -223,7 +230,7 @@ class Drone:
         """
         distance_x_m += np.random.normal(deviation_mean, deviation_sigma)
         distance_y_m += np.random.normal(deviation_mean, deviation_sigma)
-
+        
         distance = math.sqrt(distance_x_m * distance_x_m +
                              distance_y_m * distance_y_m +
                              distance_z_m * distance_z_m)
