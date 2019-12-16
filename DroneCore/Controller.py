@@ -8,7 +8,7 @@ import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
-from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException, NoPathFoundException
 
 class DroneStatusEnum(enum.Enum):
     Init=0
@@ -250,7 +250,8 @@ class Controller(threading.Thread):
         plan = self.flight_planner.find_path(point1, point2)
         if plan is None:
             self.logger.warn("No path from point %d to %d" % (point1, point2))
-            raise AbortException()      #TODO: handle this in a different way, maybe inform backend no path is possible, now jobs keeps being delpoyed
+            raise NoPathFoundException()    
+
         self.logger.info("Flying from %d to %d." % (point1, point2))
         string = ""
         for command in plan["commands"]:
@@ -273,9 +274,26 @@ class Controller(threading.Thread):
                     self.fly_from_to(job["point1"], job["point2"])
                 except Exception as e:
                     if type(e) == AbortException:
-                        message = {"action": "job_failed", "id": self.id}
+                        message = {"action": "job_failed", "id": self.id, "reason": "abortException_during_execution"}
                         self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
-                        self.logger.info("Job was aborted, backend informed.")
+                        self.logger.info("Job was aborted, backend informed: abortException during execution.")
+
+                        message = {"action": "wait_for_idle"}
+                        self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
+                        data = json.loads(self.command_socket.recv(2048).decode())
+                        if data["result"] == "false":
+                            message = {"action": "shutdown"}
+                            self.command_socket.send(json.dumps(message).encode())
+                            exit(0,0)
+                        else:
+                            # drone back in idle state, add job back in job queue
+                            # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
+                            self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                        return False
+                    elif type(e) == NoPathFoundException:
+                        message = {"action": "job_failed", "id": self.id, "reason": "No_path_found"}
+                        self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
+                        self.logger.info("Job was aborted, backend informed: NoPathFoundException.")
 
                         message = {"action": "wait_for_idle"}
                         self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread

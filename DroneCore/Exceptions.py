@@ -14,3 +14,6 @@ class AbortException(Exception):
 class JustArmedException(Exception):
     pass
 
+class NoPathFoundException(Exception):
+    pass
+

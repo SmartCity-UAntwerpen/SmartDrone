@@ -143,7 +143,7 @@ class Backend():
             del self.drones[drone_id]
             # check if drone had active job, remove when true
             if drone_id in self.active_drones:
-                self.job_failed(drone_id)
+                self.job_failed(drone_id, "drone removed")
             # remove unique id from stored ids
             if drone_id in self.ids.values():
                 unique = list(self.ids.keys())[list(self.ids.values()).index(drone_id)]
@@ -179,7 +179,7 @@ class Backend():
             elif data["action"] == "job_complete":
                 self.job_complete(data["id"])
             elif data["action"] == "job_failed":
-                self.job_failed(data["id"])
+                self.job_failed(data["id"], data["reason"])
         except KeyError:
             self.logger.warn(
                 "Received message with action: %s, not enough data provided to perform action." % data["action"])
@@ -213,7 +213,7 @@ class Backend():
             except:
                 self.logger.warn("Job status complete send to backbone failed")
 
-    def job_failed(self, drone_id):
+    def job_failed(self, drone_id, reason):
         if int(drone_id) in self.active_jobs:
             self.active_drones.remove(int(drone_id))
             job = self.active_jobs[int(drone_id)]
@@ -229,14 +229,20 @@ class Backend():
                 self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
                 self.db.remove_job(job["job_id"])
                 #inform backbone if job has failed
-                url = self.backbone_url + "/jobs/failed/" + str(job["job_id"])
+                url = self.backbone_url + "/jobs/failed"
+                content = {"job_id" : str(job["job_id"]),
+                            "drone_id": str(drone_id),
+                            "reason": str(reason)
+                            }
                 try:
-                    requests.post(url, timeout=2)
+                    requests.post(url,json=content, timeout=2)
                 except:
                     self.logger.warn("Job status failed send to backbone failed")
                 job["attempts"] = fail_count
-                self.jobs[int(job_id)] = job
-                self.db.reset_job(int(job_id))
+                #redeploy job: 
+                #self.jobs[int(job_id)] = job
+                #self.db.reset_job(int(job_id))
+
 
     def job_in_active_jobs(self, job_id):
         for job in self.active_jobs.values():
