@@ -228,8 +228,12 @@ class Backend():
             if fail_count >= 10:
                 self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
                 self.db.remove_job(job["job_id"])
-                # TODO: inform backbone + make sure to send job to another drone (maybe keep drone_id attached to the job)
-            else:
+                #inform backbone if job has failed
+                url = self.backbone_url + "/jobs/failed/" + str(job["job_id"])
+                try:
+                    requests.post(url, timeout=2)
+                except:
+                    self.logger.warn("Job status failed send to backbone failed")
                 job["attempts"] = fail_count
                 self.jobs[int(job_id)] = job
                 self.db.reset_job(int(job_id))

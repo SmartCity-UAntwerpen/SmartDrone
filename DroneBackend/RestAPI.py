@@ -82,6 +82,7 @@ def get_location(drone_id):
     if int(drone_id) in global_backend.drones.keys():
         location = global_backend.db.get_location(int(drone_id))
     return json.dumps({"location": location})
+    
 #not yet used
 @app.route('/getlocations/')
 def get_locations():
