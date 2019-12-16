@@ -82,7 +82,7 @@ def get_location(drone_id):
     if int(drone_id) in global_backend.drones.keys():
         location = global_backend.db.get_location(int(drone_id))
     return json.dumps({"location": location})
-    
+
 #not yet used
 @app.route('/getlocations/')
 def get_locations():
@@ -92,7 +92,7 @@ def get_locations():
         }
 
     for drone_id in global_backend.drones.keys():
-        location = global_backend.db.get_location(int(drone_id))
+        location = global_backend.db.get_location(int(drone_id)) #kan evt ook via global_backend.findlocation(int(drone_id))?? zelfde data wordt daar ook bijgehouden. Dit vermindert DB calls.
         locations["locations"].append(location)
     return json.dumps(locations)
 

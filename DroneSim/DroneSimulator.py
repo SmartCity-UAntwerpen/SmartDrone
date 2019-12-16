@@ -200,7 +200,7 @@ class DroneFlightCommander:
                             return
                         if self.deviation[0] == 99:
                             self.drone.land()
-                            self.drone.black_box.error("No marker dectect, abort execution!")
+                            self.drone.black_box.error("No marker dectected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
