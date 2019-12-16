@@ -178,6 +178,7 @@ class Drone:
         self.x -= 0.05
         self.y += 0.05
 
+        
         fov = 60
         self.deviation[0] = MarkerId
         view_distance = 2 * self.z * math.tan(math.radians(fov / 2))
@@ -185,12 +186,16 @@ class Drone:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
 
+            x_corr_no_yaw = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
+            y_corr_no_yaw = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
+            self.black_box.info("--DEBUG-- Flight correction ! NO ! YAW, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
+
             self.yaw = 10
             #calculate detected path according to rotation. 
             #Note: Drone first rotates back to desired angle before continuing flight.
             x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
             y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
-            self.black_box.info("Flight correction, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
+            self.black_box.info("--DEBUG-- Flight correction ! WITH ! YAW amount : %f, x: %f, y: %f, yaw: %f" % (self.yaw, x_corr, y_corr, self.yaw))
             self.deviation[1] = x_corr  # x deviation
             self.deviation[2] = y_corr  # y deviation
             #self.deviation[3]= self.yaw 
