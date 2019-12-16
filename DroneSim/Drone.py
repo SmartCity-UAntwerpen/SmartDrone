@@ -195,13 +195,14 @@ class Drone:
             #Note: Drone first rotates back to desired angle before continuing flight.
             x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
             y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
-            self.black_box.info("--DEBUG-- Flight correction ! WITH ! YAW amount : %f, x: %f, y: %f, yaw: %f" % (self.yaw, x_corr, y_corr, self.yaw))
+            self.black_box.info("--DEBUG-- Flight correction ! WITH ! YAW, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
             self.deviation[1] = x_corr  # x deviation
             self.deviation[2] = y_corr  # y deviation
             #self.deviation[3]= self.yaw 
         else:
             self.black_box.info("Detection failed, no marker found.")
-            self.deviation= [0,0,0,0]
+            #return MarkerID value 99: this is error value.
+            self.deviation= [99,0,0,0]
    
         return self.deviation
         

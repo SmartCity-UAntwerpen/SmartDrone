@@ -18,6 +18,7 @@ class DroneFlightCommander:
         Flightcommander for simulator, this file is mostly the same as remote.py in dronefw
         Keep in mind that the drone class in both classes is different!!
         ex. self.drone.status is self.drone.DroneStatus in remote.py
+        ex. self.drone.land() is self.drone.mc.land() in remote.py -> a command is accompagnied by mc (motion controller)
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem
@@ -195,6 +196,12 @@ class DroneFlightCommander:
                         if self.deviation[0] is not int(command["id"]):
                             self.drone.guided_land()
                             self.drone.black_box.error("Wrong marker detected, abort execution!")
+                            self.state = FlightCommanderState.Aborted
+                            conn.send(b'ABORT')
+                            return
+                        if self.deviation[0] == 99:
+                            self.drone.guided_land()
+                            self.drone.black_box.error("No marker dectect, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
