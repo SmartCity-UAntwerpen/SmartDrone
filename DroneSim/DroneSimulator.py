@@ -184,28 +184,28 @@ class DroneFlightCommander:
                     y= goal[1]
                     id = command["id"]
                     self.deviation = self.drone.DetectArray(id,x,y)
-                    self.drone.black_box.info("Marker detected. Deviation to marker: X= %f, Y= %f, Rot= %f " % (self.deviation[1], self.deviation[2], self.deviation[3]) )
 
                     if self.deviation is None:
-                        self.drone.guided_land()
+                        self.drone.land()
                         self.drone.black_box.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
                         if self.deviation[0] is not int(command["id"]):
-                            self.drone.guided_land()
+                            self.drone.land()
                             self.drone.black_box.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
                         if self.deviation[0] == 99:
-                            self.drone.guided_land()
+                            self.drone.land()
                             self.drone.black_box.error("No marker dectect, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
                         if self.markers is not None:
+                            self.drone.black_box.info("Marker detected. Deviation to marker: X= %f, Y= %f, Rot= %f " % (self.deviation[1], self.deviation[2], self.deviation[3]) )
                             self.deviated = True
                         conn.send(b'ACK')
                     return
