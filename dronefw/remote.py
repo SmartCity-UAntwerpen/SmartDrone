@@ -206,7 +206,11 @@ class DroneFlightCommander:
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
+                        if deviation[0] ==99:
+                            self.drone.ArucoNav.GuidedLand()
+                            self.logger.error("No marker detected, abort execution!")
                         if self.markers is not None:
+                            self.logger.info("Marker detected. Deviation to marker: X= %f, Y= %f, Rot= %f " % (self.deviation[1], self.deviation[2], self.deviation[3]) )
                             self.deviated = True
                         conn.send(b'ACK')
                     return
@@ -219,16 +223,18 @@ class DroneFlightCommander:
                                 self.deviated = False
                                 #first rotate drone back
                                 self.logger.info("Flight path recalculated")
-                                if self.deviation[3]>0:
+                                if self.deviation[3]<0 and self.deviation[3]!=0:
                                     self.drone.mc.TurnRight(self.deviation[3],0.5)
-                                else:
+                                elif self.deviation[3]>0 and self.deviation[3]!=0:
                                     self.drone.mc.TurnLeft(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
                                 if command["direction"] == "RaisingX": #Direction given as json argument. Calculated in path planner. 
                                     self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2]))
+
                                 else:
                                     self.drone.mc.MoveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
-                                self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
+                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
                                 
                                 conn.send(b'ACK')
                                 return                            

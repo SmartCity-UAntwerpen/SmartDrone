@@ -50,6 +50,7 @@ class ArucoNavClass:
         x and Y are calculated taking into account the yaw rotation of the drone to the marker 
 
         """
+        print("Detecting deviation to marker.")
         self.MarkerVectorArray=None
 
         if (PipelineFlush==True):
@@ -67,18 +68,15 @@ class ArucoNavClass:
             self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)       
             #calculate detected path according to rotation to marker (MarkerYaw). 
              #Note: Drone first rotates back to desired angle before continuing flight.
-            x_corr = x_dev*math.cos(self.MarkerVectorArray[3]) + y_dev*math.sin(self.MarkerVectorArray[3])
-            y_corr = x_dev*math.sin(self.MarkerVectorArray[3]) + y_dev*math.cos(self.MarkerVectorArray[3])
-            self.MarkerVectorArray[1] = x_corr
-            self.MarkerVectorArray[2] = y_corr
-            if (self._DebugPrint == True):
-                print ('Marker before angle calculation:(%s,%s,%s)' % (x_dev,y_dev,self.MarkerVectorArray[3]))
-                print ('Marker after angle calculation:(%s,%s,%s)' % (self.MarkerVectorArray[1],self.MarkerVectorArray[2],self.MarkerVectorArray[3]))
+            #x_corr = x_dev*math.cos(self.MarkerVectorArray[3]) + y_dev*math.sin(self.MarkerVectorArray[3])
+            #y_corr = x_dev*math.sin(self.MarkerVectorArray[3]) + y_dev*math.cos(self.MarkerVectorArray[3])
+            self.MarkerVectorArray[1] = x_dev
+            self.MarkerVectorArray[2] = y_dev
             return self.MarkerVectorArray
         else:
             if (self._DebugPrint == True):
-                print("None detected")
-            return None
+                print("Detection failed, no marker found.")
+            return [99,0,0,0]
 
     def Detect(self,MarkerId=-1,PipelineFlush=True,NumTries=40,CalcYaw=True):
         """

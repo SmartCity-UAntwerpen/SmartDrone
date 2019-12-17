@@ -183,13 +183,8 @@ class Drone:
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
-            #self.yaw = 0.1
-            #No need to take yaw into account in simulator
-            #calculate detected path according to rotation. 
+
             #Note: Drone first rotates back to desired angle before continuing flight.
-            #x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
-            #y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
-            #elf.black_box.info("--DEBUG-- Flight correction ! WITH ! YAW, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
             self.deviation[1] = x_dev  # x deviation
             self.deviation[2] = y_dev # y deviation
             self.deviation[3]= self.yaw 
