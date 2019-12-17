@@ -240,9 +240,10 @@ class Backend():
                 except:
                     self.logger.warn("Job status failed send to backbone failed")
                 job["attempts"] = fail_count
+            else:
                 #redeploy job: 
-                #self.jobs[int(job_id)] = job
-                #self.db.reset_job(int(job_id))
+                self.jobs[int(job_id)] = job
+                self.db.reset_job(int(job_id))
 
 
     def job_in_active_jobs(self, job_id):
