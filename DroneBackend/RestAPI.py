@@ -101,7 +101,7 @@ def get_locations():
 def cancel_job(job_id):
     global global_backend
     result = "false"
-    if job_id in global_backend.jobs.keys():
+    if int(job_id) in global_backend.jobs.keys():
         global_backend.cancel_job(job_id)
         result = "true"
     #TODO: if job is active, maybe land drone at first possible marker and remove job from active job list
