@@ -231,8 +231,8 @@ class Backend():
                 self.db.remove_job(job["job_id"])
                 #inform backbone if job has failed
                 url = self.backbone_url + "/jobs/failed"
-                content = {"job_id" : str(job["job_id"]),
-                            "drone_id": str(drone_id),
+                content = {"jobId" : str(job["job_id"]),
+                            "droneId": str(drone_id),
                             "reason": str(reason)
                             }
                 try:
