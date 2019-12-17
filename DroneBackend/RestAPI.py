@@ -92,10 +92,9 @@ def get_locations():
         }
 
     for drone_id in global_backend.drones.keys():
-        location = global_backend.db.get_location(int(drone_id)) #kan evt ook via global_backend.findlocation(int(drone_id))?? zelfde data wordt daar ook bijgehouden. Dit vermindert DB calls.
+        location = global_backend.find_location(int(drone_id))
         locations["locations"].append(location)
     return json.dumps(locations)
-
 
 
 @app.route('/job/cancel/<job_id>')
