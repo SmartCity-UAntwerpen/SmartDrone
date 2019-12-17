@@ -239,9 +239,9 @@ class Backend():
                     requests.post(url,json=content, timeout=2)
                 except:
                     self.logger.warn("Job status failed send to backbone failed")
-                job["attempts"] = fail_count
             else:
                 #redeploy job: 
+                job["attempts"] = fail_count
                 self.jobs[int(job_id)] = job
                 self.db.reset_job(int(job_id))
 
