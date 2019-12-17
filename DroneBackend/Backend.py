@@ -189,7 +189,8 @@ class Backend():
             job_id = list(self.jobs.keys()).pop(0)
 
             job = self.jobs[job_id]
-            job["action"] = "no_plan_job"      
+            job["action"] = "no_plan_job"
+            job["drone_id"]= drone_id      
             self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
             self.logger.info("Deploying job to drone [id]: %d, [job_id] %d" % (drone_id, job_id))
 
@@ -244,6 +245,17 @@ class Backend():
                 job["attempts"] = fail_count
                 self.jobs[int(job_id)] = job
                 self.db.reset_job(int(job_id))
+
+    def cancel_job(self, job_id):
+        """cancels the job, drone lands on nearest marker"""
+        if job_in_active_jobs(int(job_id)):
+            job = self.jobs[job_id]
+            #self.db.remove_job(job_id)
+            #self.active_jobs.remove[int(job["drone_id"])]
+            self.logger.info("Job cancelled: job_id: %s, drone_id: %s" % (job["job_id"], job["drone_id"]))
+
+
+
 
 
     def job_in_active_jobs(self, job_id):
