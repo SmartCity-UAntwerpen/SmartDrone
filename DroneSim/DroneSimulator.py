@@ -217,7 +217,6 @@ class DroneFlightCommander:
                             if self.deviated:
                                 self.deviated = False
                                 #first rotate drone back
-                                self.drone.black_box.info("Flight path recalculated")
                                 if self.deviation[3]<0 and self.deviation[3]!=0:
                                     angle = self.deviation[3]*180/math.pi
                                     self.drone.turnLeft(angle,0.5)
@@ -226,10 +225,10 @@ class DroneFlightCommander:
                                     self.drone.turnRight(angle,0.5)
                                 #calculate new distance according to deviation from marker
                                 if command["direction"] == "RaisingX":
-                                    self.drone.black_box.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]-self.deviation[2], goal[2]))
+                                    self.drone.black_box.info("Recalculated flight Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]-self.deviation[2], goal[2]))
                                     self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
                                 else:
-                                    self.drone.black_box.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
+                                    self.drone.black_box.info("Recalculated flight Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
                                     self.drone.moveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
 
                                 conn.send(b'ACK')

@@ -61,13 +61,13 @@ class Drone:
             self.black_box.warn("Drone not armed! Arm drone before takeoff.")
 
     def land(self):
-        self.black_box.info("Drone landing.")
+        self.black_box.info("Drone landing initiated.")
         self.moveDistance(0, 0, -self.z, velocity=0.2, deviation_sigma=0.02)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
         self.status = DroneStatusEnum.Idle
 
     def guided_land(self, velocity, x, y):
-        self.black_box.info("Drone landing (guided).")
+        self.black_box.info("Drone landing initiated (guided).")
         self.center(x, y)
         self.moveDistance(0, 0, -self.z, velocity=velocity, deviation_sigma=0)
         self.black_box.info("Drone landed at: (%.2f %.2f %.2f)." % (self.x, self.y, self.z))
@@ -149,12 +149,10 @@ class Drone:
 
         self.black_box.info("Turning left by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
-        self.black_box.info("ALERT: YAW voor rotation: %f" %self.yaw)
         self.yaw += angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
         self.x += np.random.normal(0, 0.2)
         self.y += np.random.normal(0, 0.2)
-        self.black_box.info("ALERT: YAW na rotation: %f" %self.yaw)
         time.sleep(flight_time)
 
     def turnRight(self, angle_degrees=None, rate=RATE):
@@ -185,9 +183,6 @@ class Drone:
         if x - view_distance / 2 <= self.x <= x + view_distance / 2 and y - view_distance / 2 <= self.y <= y + view_distance / 2:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
-
-            self.black_box.info("Flight correction, x: %f, y: %f, yaw: %f" % (x_dev, y_dev, self.yaw))
-
             #self.yaw = 0.1
             #No need to take yaw into account in simulator
             #calculate detected path according to rotation. 
