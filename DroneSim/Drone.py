@@ -152,8 +152,8 @@ class Drone:
         self.black_box.info("ALERT: YAW voor rotation: %f" %self.yaw)
         self.yaw += angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
-        #self.x += np.random.normal(0, 0.2)
-        #self.y += np.random.normal(0, 0.2)
+        self.x += np.random.normal(0, 0.2)
+        self.y += np.random.normal(0, 0.2)
         self.black_box.info("ALERT: YAW na rotation: %f" %self.yaw)
         time.sleep(flight_time)
 
@@ -166,8 +166,8 @@ class Drone:
         flight_time = angle_degrees / rate
         self.yaw -= angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
-        #self.x += np.random.normal(0, 0.2)
-        #self.y += np.random.normal(0, 0.2)
+        self.x += np.random.normal(0, 0.2)
+        self.y += np.random.normal(0, 0.2)
         time.sleep(flight_time)
 
     def DetectArray(self, MarkerId, x,y ):
@@ -222,7 +222,7 @@ class Drone:
             self.black_box.info("Centering failed, no marker found.")
 
     def moveDistance(self, distance_x_m, distance_y_m, distance_z_m, velocity=0.5, deviation_mean=0,
-                     deviation_sigma=0.0):
+                     deviation_sigma=0.05):
         """
         Move distance specified by the distance x,y,z parameters [m], the deviation_mean and deviation_simgma control
         the randomness of the movement
