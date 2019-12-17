@@ -214,7 +214,7 @@ class Backend():
                 self.logger.warn("Job status complete send to backbone failed")
 
     def job_failed(self, drone_id, reason):
-        """ When job fails, job is redeployed 10 times. After 10 consecutive faillures, job gets removed and backend is informed."""
+        """ When job fails, job is redeployed 3 times. After 3 consecutive faillures, job gets removed and backend is informed."""
         if int(drone_id) in self.active_jobs:
             self.active_drones.remove(int(drone_id))
             job = self.active_jobs[int(drone_id)]
@@ -226,7 +226,7 @@ class Backend():
             fail_count += 1
             self.logger.info("Drone with id: %d FAILED its job, attempt: %d" % (int(drone_id), fail_count))
             # Add job back in queue if less than 10 attempts are performed
-            if fail_count >= 10:
+            if fail_count >= 3:
                 self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
                 self.db.remove_job(job["job_id"])
                 #inform backbone if job has failed
