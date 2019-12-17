@@ -149,10 +149,12 @@ class Drone:
 
         self.black_box.info("Turning left by %0.2f degree." % angle_degrees)
         flight_time = angle_degrees / rate
+        self.black_box.info("ALERT: YAW voor rotation: %f" %self.yaw)
         self.yaw += angle_degrees * math.pi / 180
         # move the drone, turning the drone is not perfect and moves the drone
         #self.x += np.random.normal(0, 0.2)
         #self.y += np.random.normal(0, 0.2)
+        self.black_box.info("ALERT: YAW na rotation: %f" %self.yaw)
         time.sleep(flight_time)
 
     def turnRight(self, angle_degrees=None, rate=RATE):
@@ -186,19 +188,17 @@ class Drone:
             x_dev = float(x - self.x)
             y_dev = float(y - self.y)
 
-            x_corr_no_yaw = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
-            y_corr_no_yaw = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
-            self.black_box.info("--DEBUG-- Flight correction ! NO ! YAW, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
+            self.black_box.info("--DEBUG-- Flight correction ! NO ! YAW, x: %f, y: %f, yaw: %f" % (x_dev, y_dev, self.yaw))
 
-            self.yaw = 10
+            self.yaw = 0.1
             #calculate detected path according to rotation. 
             #Note: Drone first rotates back to desired angle before continuing flight.
             x_corr = x_dev*math.cos(self.yaw) + y_dev*math.sin(self.yaw)
             y_corr = x_dev*math.sin(self.yaw) + y_dev*math.cos(self.yaw)
             self.black_box.info("--DEBUG-- Flight correction ! WITH ! YAW, x: %f, y: %f, yaw: %f" % (x_corr, y_corr, self.yaw))
-            self.deviation[1] = x_corr  # x deviation
-            self.deviation[2] = y_corr  # y deviation
-            #self.deviation[3]= self.yaw 
+            self.deviation[1] = x_dev  # x deviation
+            self.deviation[2] = y_dev # y deviation
+            self.deviation[3]= self.yaw 
         else:
             self.black_box.info("Detection failed, no marker found.")
             #return MarkerID value 99: this is error value.
