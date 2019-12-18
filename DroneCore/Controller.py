@@ -44,6 +44,7 @@ class Controller(threading.Thread):
 
     running = True
     executing_flight_plan = False
+    cancel_received = False
     command_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     status_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     poller = None
@@ -180,6 +181,7 @@ class Controller(threading.Thread):
 
             if data["action"] == "cancel":
                 self.logger.warn("job cancel arrived!")
+                self.cancel_received = True
 
 
 
@@ -220,7 +222,7 @@ class Controller(threading.Thread):
         self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
 
     def execute_flight_plan(self,plan):
-        while len(plan["commands"]) != 0 and self.executing_flight_plan:
+        while len(plan["commands"]) != 0 and self.executing_flight_plan and not self.cancel_received:
             command = plan["commands"].pop(0)
             command["action"] = "execute_command"
 
@@ -250,6 +252,12 @@ class Controller(threading.Thread):
                 self.logger.error("Command not executed.")
                 raise AbortException()
         self.executing_flight_plan = False
+        if self.cancel_received:
+            self.cancel_received = False
+            self.logger.info("CANCEL HANDLED IN FLIGHT PLAN")
+            command["action"] = "execute_command"
+            command["command"] = "land"
+            self.send_command(json.dumps(command))
 
     def fly_from_to(self, point1, point2):
         plan = self.flight_planner.find_path(point1, point2)
