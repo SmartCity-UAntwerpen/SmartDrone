@@ -17,3 +17,6 @@ class JustArmedException(Exception):
 class NoPathFoundException(Exception):
     pass
 
+class CancelJobException(Exception):
+    pass
+

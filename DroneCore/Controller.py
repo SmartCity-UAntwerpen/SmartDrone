@@ -8,7 +8,7 @@ import Common.FlightPlanner as fp
 import paho.mqtt.client as paho
 from uuid import getnode as get_mac
 import threading
-from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException, NoPathFoundException
+from DroneCore.Exceptions import DroneNotArmedException, CommandNotExectuedException, StateException, AbortException, JustArmedException, NoPathFoundException, CancelJobException
 
 class DroneStatusEnum(enum.Enum):
     Init=0
@@ -247,6 +247,8 @@ class Controller(threading.Thread):
                         self.logger.error("Command not executed. Wrong state. Retrying %d..." % counter)
                     if type(e) == JustArmedException:
                         self.logger.info("Drone just armed.")
+                    if type(e) == CancelJobException:
+                        self.logger.info("Drone succesfull cancelled job.")
 
             if not executed:
                 self.logger.error("Command not executed.")
@@ -258,6 +260,7 @@ class Controller(threading.Thread):
             command["action"] = "execute_command"
             command["command"] = "land"
             self.send_command(json.dumps(command))
+            raise CancelJobException()
 
     def fly_from_to(self, point1, point2):
         plan = self.flight_planner.find_path(point1, point2)
