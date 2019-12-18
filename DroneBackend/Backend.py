@@ -153,6 +153,12 @@ class Backend():
                 return True
         return False
 
+    def remove_job(self, drone_id):
+        self.active_drones.remove(int(drone_id))
+        # remove job from db
+        self.db.remove_job(drone_id)
+        del self.active_jobs[int(drone_id)]
+
     def mqtt_callback(self, mosq, obj, msg):
         """ Base MQTT callback for backend, here json messages with at least the fields id and action are expected."""
         data = json.loads(msg.payload.decode())
@@ -179,10 +185,17 @@ class Backend():
             elif data["action"] == "job_complete":
                 self.job_complete(data["id"])
             elif data["action"] == "job_failed":
-                self.job_failed(data["id"], data["reason"])
+                #job_failed method redeploys job 3 times, if job is cancelled, it does not need to be redeployed, so it is directly removed.
+                if data["reason"] != "Job cancelled":
+                    self.job_failed(data["id"], data["reason"])
+                else:
+                    self.remove_job(data["id"])
+                    
         except KeyError:
             self.logger.warn(
                 "Received message with action: %s, not enough data provided to perform action." % data["action"])
+
+    
 
     def assign_job_to_drone(self, drone_id):
         if len(self.jobs) != 0 and drone_id not in self.active_drones:
@@ -201,11 +214,8 @@ class Backend():
     def job_complete(self, drone_id):
         if int(drone_id) in self.active_drones:
             self.logger.info("Drone with id: %d COMPLETED its job" % (int(drone_id)))
-            self.active_drones.remove(int(drone_id))
             job = self.active_jobs[int(drone_id)]
-            # remove job from db
-            self.db.remove_job(job["job_id"])
-            del self.active_jobs[int(drone_id)]
+            self.remove_job(drone_id)
             # INFORM BACKBONE
             url = self.backbone_url + "/jobs/complete/" + str(job["job_id"])
             try:
@@ -252,9 +262,10 @@ class Backend():
 
     def cancel_job(self, job_id):
         """cancels the job, drone drone lands on current position"""
+        self.logger.info("Job cancel arrived at backend")
         active_jobs = self.db.get_active_jobs()
         if not active_jobs:
-            return "Job Id not active"
+            return "No active jobs found"
         for job in active_jobs:
             self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
             if int(job["job_id"]) == int(job_id):
@@ -263,8 +274,9 @@ class Backend():
                 job["drone_id"]= drone_id     
                 self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
                 self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
+                return "Job succesfully cancelled"
+            return "job_id is not an active job"
 
-        return "Job succesfully cancelled"
 
         
     

@@ -323,6 +323,23 @@ class Controller(threading.Thread):
                             # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
                             self.logger.info("Job was aborted, but drone is reset and back in idle.")
                         return False
+                    elif type(e) == CancelJobException:
+                        message = {"action": "job_failed", "id": self.id, "reason": "Job cancelled"}
+                        self.mqtt.publish(self.backend_topic, json.dumps(message), qos=2)
+                        self.logger.info("Job was aborted, backend informed: JobCancelException.")
+
+                        message = {"action": "wait_for_idle"}
+                        self.command_socket.send(json.dumps(message).encode())          # use command socket, because status socket is used by thread
+                        data = json.loads(self.command_socket.recv(2048).decode())
+                        if data["result"] == "false":
+                            message = {"action": "shutdown"}
+                            self.command_socket.send(json.dumps(message).encode())
+                            exit(0,0)
+                        else:
+                            # drone back in idle state, add job back in job queue
+                            # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
+                            self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                        return False
                     else:
                         self.logger.warn("Job failed.")
                         self.logger.warn(e)
