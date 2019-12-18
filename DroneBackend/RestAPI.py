@@ -80,7 +80,7 @@ def get_location(drone_id):
     global global_backend
     location = "invalid drone id"
     if int(drone_id) in global_backend.drones.keys():
-        location = global_backend.db.get_location(int(drone_id))
+        location = global_backend.find_location(int(drone_id))
     return json.dumps({"location": location})
 
 #not yet used
@@ -102,4 +102,4 @@ def cancel_job(job_id):
     global global_backend
     result = global_backend.cancel_job(job_id)    
     #TODO: if job is active, maybe land drone at first possible marker and remove job from active job list
-    return json.dumps({"success": result})
+    return json.dumps({"Report": result})

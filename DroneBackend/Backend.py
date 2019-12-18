@@ -251,10 +251,10 @@ class Backend():
         return False
 
     def cancel_job(self, job_id):
-        """cancels the job, drone lands on nearest marker"""
+        """cancels the job, drone drone lands on current position"""
         active_jobs = self.db.get_active_jobs()
         if not active_jobs:
-            return False
+            return "Job Id not active"
         for job in active_jobs:
             self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
             if int(job["job_id"]) == int(job_id):
@@ -264,7 +264,7 @@ class Backend():
                 self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
                 self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
 
-        return True
+        return "Job succesfully cancelled"
 
         
     
