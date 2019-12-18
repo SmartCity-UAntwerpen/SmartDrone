@@ -135,6 +135,21 @@ class DBConnection:
         except Exception as e: print(e)
         return jobs, active_jobs, active_drones
 
+    def get_active_jobs(self):
+        jobs= []
+        try:
+            for job in self.query("select * from drones.jobs"):
+                loaded_job = {
+                    "drone_id" : job[1],
+                    "point1": job[3],
+                    "point2": job[4],
+                    "job_id": job[5]
+                }
+                if int(job[2]) != 0:
+                    jobs.append(loaded_job)
+        except Exception as e: print(e)
+        return jobs
+
     def set_job_active(self, job_id, drone_id):
         try:
             sql = "update drones.jobs set droneID=%d, active=%d where job_id=%d" % (drone_id, 1, job_id)

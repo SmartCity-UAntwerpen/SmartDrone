@@ -178,6 +178,11 @@ class Controller(threading.Thread):
                 except KeyError:
                     self.logger.warn("Received incomplete job data.")
 
+            if data["action"] == "cancel":
+                self.logger.warn("job cancel arrived!")
+
+
+
         except ValueError:
             self.logger.warn("Received new mqtt message on unique topic, message is not in JSON format.")
 

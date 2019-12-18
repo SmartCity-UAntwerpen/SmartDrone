@@ -190,10 +190,9 @@ class Backend():
 
             job = self.jobs[job_id]
             job["action"] = "no_plan_job"
-            job["drone_id"]= drone_id      
+            job["drone_id"]= drone_id     
             self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
             self.logger.info("Deploying job to drone [id]: %d, [job_id] %d" % (drone_id, job_id))
-
             self.active_jobs[drone_id] = self.jobs[job_id]
             self.active_drones.append(drone_id)
             del self.jobs[job_id]
@@ -226,7 +225,7 @@ class Backend():
             except: fail_count = 0
             fail_count += 1
             self.logger.info("Drone with id: %d FAILED its job, attempt: %d" % (int(drone_id), fail_count))
-            # Add job back in queue if less than 10 attempts are performed
+            # Add job back in queue if less than 3 attempts are performed
             if fail_count >= 3:
                 self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
                 self.db.remove_job(job["job_id"])
@@ -246,23 +245,29 @@ class Backend():
                 self.jobs[int(job_id)] = job
                 self.db.reset_job(int(job_id))
 
-    def cancel_job(self, job_id):
-        """cancels the job, drone lands on nearest marker"""
-        if job_in_active_jobs(int(job_id)):
-            job = self.jobs[job_id]
-            #self.db.remove_job(job_id)
-            #self.active_jobs.remove[int(job["drone_id"])]
-            self.logger.info("Job cancelled: job_id: %s, drone_id: %s" % (job["job_id"], job["drone_id"]))
-
-
-
-
-
     def job_in_active_jobs(self, job_id):
         for job in self.active_jobs.values():
             if job["job_id"] == job_id: return True
         return False
 
+    def cancel_job(self, job_id):
+        """cancels the job, drone lands on nearest marker"""
+        active_jobs = self.db.get_active_jobs()
+        if not active_jobs:
+            return False
+        for job in active_jobs:
+            self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
+            if int(job["job_id"]) == int(job_id):
+                drone_id = job["drone_id"]
+                job["action"] = "cancel"
+                job["drone_id"]= drone_id     
+                self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
+                self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
+
+        return True
+
+        
+    
     def find_location(self, id):
         return self.drones[id]
 
