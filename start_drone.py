@@ -51,12 +51,8 @@ if __name__ == "__main__":
         # start a normal drone
         print("STARTUP: Real Drone starting...")
 
-        currentPath = sys.path[0]
-        pythonPath = os.path.dirname(sys.executable)
-        os.chdir(pythonPath)
-        executing_process = Popen(["python.exe", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
-        communicating_process = Popen(["python.exe", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
-        os.chdir(currentPath)
+        executing_process = Popen(["python3", "remote.py", str(port)],  cwd=sys.path[0]+"/dronefw")
+        communicating_process = Popen(["python3", "DroneCore/Controller.py",  str(port), str(marker), str(ip)])
         
         running = True
         try:

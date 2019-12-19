@@ -103,3 +103,11 @@ def cancel_job(job_id):
     result = global_backend.cancel_job(job_id)    
     #TODO: if job is active, maybe land drone at first possible marker and remove job from active job list
     return json.dumps({"Report": result})
+
+#only use this for debug purposes
+@app.route('/job/delete/<drone_id>')
+def remove_job(drone_id):
+    global global_backend
+    result = global_backend.remove_job(int(drone_id))
+    return json.dumps({"Report": "job deleted"})
+

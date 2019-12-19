@@ -22,7 +22,6 @@ class DroneFlightCommander:
 
     
 
-    drone = Drone.DroneClass(self.ClosedCallback)
     logger = dlogger.create_logger()
     px = 0
     py = 0
@@ -32,6 +31,7 @@ class DroneFlightCommander:
 
     def __init__(self, port):
         LastStatusTime = 0
+        self.drone = Drone.DroneClass(self.ClosedCallback())
         StatusUpdateInterval = 3
         if time.time() - LastStatusTime > StatusUpdateInterval:
             self.logger.info("Battery voltage:%s" % (self.drone.Vbat))
@@ -53,9 +53,9 @@ class DroneFlightCommander:
             self.running = False
 
 
-    def ClosedCallback():
+    def ClosedCallback(self):
         """Close all threads here for clean shutdown"""
-        exit(0)
+        sys.exit(0)
     
     def handle_status_update(self, sock, data):
         try:
