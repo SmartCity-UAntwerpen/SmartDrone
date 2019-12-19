@@ -32,7 +32,7 @@ class DroneFlightCommander:
     def __init__(self, port):
         LastStatusTime = 0
         self.drone = Drone.DroneClass(self.ClosedCallback)
-        
+
         StatusUpdateInterval = 3
         if time.time() - LastStatusTime > StatusUpdateInterval:
             self.logger.info("Battery voltage:%s" % (self.drone.Vbat))
@@ -224,9 +224,9 @@ class DroneFlightCommander:
                                 #first rotate drone back
                                 self.logger.info("Flight path recalculated")
                                 if self.deviation[3]<0 and self.deviation[3]!=0:
-                                    self.drone.mc.TurnRight(self.deviation[3],0.5)
+                                    self.drone.mc.TurnRight(abs(self.deviation[3]),0.5)
                                 elif self.deviation[3]>0 and self.deviation[3]!=0:
-                                    self.drone.mc.TurnLeft(self.deviation[3],0.5)
+                                    self.drone.mc.TurnLeft(abs(self.deviation[3]),0.5)
                                 #calculate new distance according to deviation from marker
                                 if command["direction"] == "RaisingX": #Direction given as json argument. Calculated in path planner. 
                                     self.drone.mc.MoveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
