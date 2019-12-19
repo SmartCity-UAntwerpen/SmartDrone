@@ -31,7 +31,8 @@ class DroneFlightCommander:
 
     def __init__(self, port):
         LastStatusTime = 0
-        self.drone = Drone.DroneClass(self.ClosedCallback())
+        self.drone = Drone.DroneClass(self.ClosedCallback)
+        
         StatusUpdateInterval = 3
         if time.time() - LastStatusTime > StatusUpdateInterval:
             self.logger.info("Battery voltage:%s" % (self.drone.Vbat))
@@ -191,22 +192,21 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray(command["id"])
-                    self.logger.info("Marker detected. Deviation to marker: X= %f, Y= %f, Rot= %f " % (self.deviation[1], self.deviation[2], self.deviation[3] ))
 
-                    if deviation is None:
+                    if self.deviation is None:
                         self.drone.ArucoNav.GuidedLand()
                         self.logger.error("No marker detected")
                         self.state = FlightCommanderState.Aborted
                         conn.send(b'ABORT')
                         return
                     else:
-                        if deviation[0] is not int(command["id"]):
+                        if self.deviation[0] is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("Wrong marker detected, abort execution!")
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return
-                        if deviation[0] ==99:
+                        if self.deviation[0] ==99:
                             self.drone.ArucoNav.GuidedLand()
                             self.logger.error("No marker detected, abort execution!")
                         if self.markers is not None:
@@ -229,18 +229,20 @@ class DroneFlightCommander:
                                     self.drone.mc.TurnLeft(self.deviation[3],0.5)
                                 #calculate new distance according to deviation from marker
                                 if command["direction"] == "RaisingX": #Direction given as json argument. Calculated in path planner. 
-                                    self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
-                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2]))
-
-                                else:
                                     self.drone.mc.MoveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
                                     self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
+
+                                else:
+                                    self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
+                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2]))
                                 
                                 conn.send(b'ACK')
                                 return                            
                             else:
                                 self.logger.info("No need to adjust for deviation")
                                 self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
+                                self.logger.info("moving with x: %f, y: %f, z: %f" % (goal[0], goal[1], goal[2]))
+
                                 conn.send(b'ACK')
                                 return
 
@@ -282,12 +284,14 @@ class DroneFlightCommander:
 
                 elif command["command"] == "turn_left":
                     if self.check_values(command, "angle", "rate"):
+                        self.logger.info("turning left: with angle: %f" % command["angle"])
                         self.drone.mc.TurnLeft(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
 
                 elif command["command"] == "turn_right":
                     if self.check_values(command, "angle", "rate"):
+                        self.logger.info("turning right: with angle: %f" % command["angle"])
                         self.drone.mc.TurnRight(command["angle"], command["rate"])
                         conn.send(b'ACK')
                         return
@@ -304,7 +308,7 @@ class DroneFlightCommander:
                     else:
                         if marker.Id is not int(command["id"]):
                             self.drone.ArucoNav.GuidedLand()
-                            self.logger.error("Wrong marker detected, abort execution!")
+                            self.logger.error("Wrong marker detected, abort execution! Expected marker %c" % command["id"])
                             self.state = FlightCommanderState.Aborted
                             conn.send(b'ABORT')
                             return

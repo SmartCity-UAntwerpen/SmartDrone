@@ -51,7 +51,7 @@ class ArucoNavClass:
 
         """
         print("Detecting deviation to marker.")
-        self.MarkerVectorArray=None
+        self.MarkerVectorArray=[0,0,0,0]
 
         if (PipelineFlush==True):
             for a in range(0, 15):

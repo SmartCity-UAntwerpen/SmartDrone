@@ -70,7 +70,8 @@ class Controller(threading.Thread):
         try:
             mac = get_mac()
             url = "http://" + self.ip + ":8082/addDrone/" + str(mac + self.port)
-
+            self.logger.info(url)
+            self.logger.info(requests.get(url).text)
             data = json.loads(requests.get(url).text)
             self.id = data["id"]
             self.mqtt = paho.Client()
@@ -95,6 +96,7 @@ class Controller(threading.Thread):
             self.logger.info("Markers updated.")
         except Exception as e:
             self.logger.error("Connection with backend failed.")
+            self.logger.error(e)
             return False
 
         # connect with execution process
