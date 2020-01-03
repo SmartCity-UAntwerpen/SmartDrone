@@ -265,19 +265,23 @@ class Backend():
         """cancels the job, drone drone lands on current position"""
         self.logger.info("Job cancel arrived at backend")
         active_job_list = self.db.get_active_jobs()
-        self.logger.info(self.active_jobs)
-        if not active_job_list:
-            return "No active jobs found"
-        for job in active_job_list:
+        #self.logger.info(self.active_jobs)
+
+        if not self.active_jobs:
+            self.logger.info("There are no active jobs to cancel")
+
+        for key in self.active_jobs:
+            #self.logger.info(job)
+            job = self.active_jobs[int(key)]
             self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
-            if int(job["job_id"]) == int(job_id):
-                drone_id = job["drone_id"]
-                job["action"] = "cancel"
-                job["drone_id"]= drone_id     
-                self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
-                self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
-                return "Job succesfully cancelled"
-            return "job_id is not an active job"
+            #if int(job["job_id"]) == int(job_id):
+                #drone_id = job["drone_id"]
+                #job["action"] = "cancel"
+                #job["drone_id"]= drone_id     
+                #self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
+                #self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
+                #return "Job succesfully cancelled"
+            #return "job_id is not an active job"
 
 
         
@@ -288,10 +292,16 @@ class Backend():
     def set_location(self, id, location):
         if id in self.drones.keys():
             self.drones[id] = location
-            
+
     #WARNING: use this for debug purposes only!
     def hard_reset(self):
         self.db.remove_all_jobs()
+        self.logger.warn("Hard reset triggered!")
+        #this will clean all lists
+        self.jobs = {}
+        self.active_jobs = {}
+        self.active_drones = []
+
 
     def __del__(self):
         if self.drone_alive_checker:

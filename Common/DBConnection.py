@@ -130,6 +130,7 @@ class DBConnection:
         try:
             for job in self.query("select * from drones.jobs"):
                 loaded_job = {
+                    "drone_id": job[1],
                     "point1": job[3],
                     "point2": job[4],
                     "job_id": job[5]
