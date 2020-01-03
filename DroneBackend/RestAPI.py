@@ -74,6 +74,14 @@ def get_progress(job_id):
         progress = 100
     return json.dumps({ "progress": progress })
 
+
+#WARNING: use this for debug purposes only
+@app.route('/hardreset')
+def hardreset():
+    global global_backend
+    global_backend.hard_reset()
+    return json.dumps({ "Result": "Big cleanup completed..." })
+
 #not yet used
 @app.route('/getlocation/<drone_id>')
 def get_location(drone_id):

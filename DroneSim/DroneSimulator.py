@@ -18,7 +18,7 @@ class DroneFlightCommander:
         Flightcommander for simulator, this file is mostly the same as remote.py in dronefw
         Keep in mind that the drone class in both classes is different!!
         ex. self.drone.status is self.drone.DroneStatus in remote.py
-        ex. self.drone.land() is self.drone.mc.land() in remote.py -> a command is accompagnied by mc (motion controller)
+        ex. self.drone.land() is self.drone.mc.land() in remote.py -> a command is accompagnied by mc (motion commander)
     """
     drone = Drone.Drone()
     state = FlightCommanderState.NoProblem

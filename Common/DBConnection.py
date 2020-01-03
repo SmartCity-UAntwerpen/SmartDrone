@@ -116,6 +116,13 @@ class DBConnection:
             self.query(query)
         except Exception as e: print(e)
 
+    def remove_all_jobs(self):
+        """Use for debug purposes only"""
+        try:
+            query = "delete * from drones.jobs"
+            self.query(query)
+        except Exception as e: print(e)
+
     def load_jobs(self):
         jobs = {}
         active_jobs = {}

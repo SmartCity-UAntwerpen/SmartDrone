@@ -57,6 +57,7 @@ class Controller(threading.Thread):
     current_marker_id = 0
     flight_planner = fp.FlightPlanner()
     jobs = [] # job list
+    
     drone_status = ""
 
     def __init__(self,ip,port):
@@ -340,7 +341,7 @@ class Controller(threading.Thread):
                         else:
                             # drone back in idle state, add job back in job queue
                             # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
-                            self.logger.info("Job was aborted, but drone is reset and back in idle.")
+                            self.logger.info("Job was cancelled, but drone is reset and back in idle.")
                         return False
                     else:
                         self.logger.warn("Job failed.")

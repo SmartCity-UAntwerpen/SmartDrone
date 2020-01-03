@@ -203,7 +203,8 @@ class Backend():
 
             job = self.jobs[job_id]
             job["action"] = "no_plan_job"
-            job["drone_id"]= drone_id     
+            job["drone_id"]= drone_id
+            job["job_id"] = job_id     
             self.mqtt.publish(self.base_mqtt_topic + "/" + str(drone_id), json.dumps(job), qos=2)
             self.logger.info("Deploying job to drone [id]: %d, [job_id] %d" % (drone_id, job_id))
             self.active_jobs[drone_id] = self.jobs[job_id]
@@ -237,7 +238,7 @@ class Backend():
             self.logger.info("Drone with id: %d FAILED its job, attempt: %d" % (int(drone_id), fail_count))
             # Add job back in queue if less than 3 attempts are performed
             if fail_count >= 3:
-                self.logger.info("Dropping job with id: %d because  job exeeded attempt limit (10)." % int(job_id))
+                self.logger.info("Dropping job with id: %d because  job exceeded attempt limit (3)." % int(job_id))
                 self.db.remove_job(job["job_id"])
                 #inform backbone if job has failed
                 url = self.backbone_url + "/jobs/failed"
@@ -263,10 +264,11 @@ class Backend():
     def cancel_job(self, job_id):
         """cancels the job, drone drone lands on current position"""
         self.logger.info("Job cancel arrived at backend")
-        active_jobs = self.db.get_active_jobs()
-        if not active_jobs:
+        active_job_list = self.db.get_active_jobs()
+        self.logger.info(self.active_jobs)
+        if not active_job_list:
             return "No active jobs found"
-        for job in active_jobs:
+        for job in active_job_list:
             self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
             if int(job["job_id"]) == int(job_id):
                 drone_id = job["drone_id"]
@@ -286,6 +288,10 @@ class Backend():
     def set_location(self, id, location):
         if id in self.drones.keys():
             self.drones[id] = location
+            
+    #WARNING: use this for debug purposes only!
+    def hard_reset(self):
+        self.db.remove_all_jobs()
 
     def __del__(self):
         if self.drone_alive_checker:
