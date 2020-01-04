@@ -48,6 +48,7 @@ class Controller(threading.Thread):
     command_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     status_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     poller = None
+    cancel_handled = False
     logger = clogger.logger
 
     id = -1         # id should be received from backend
@@ -225,11 +226,14 @@ class Controller(threading.Thread):
         self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
 
     def execute_flight_plan(self,plan):
-        while len(plan["commands"]) != 0 and self.executing_flight_plan:
+        while len(plan["commands"]) != 0 and self.executing_flight_plan and not self.cancel_received:
             command = plan["commands"].pop(0)
             command["action"] = "execute_command"
             counter = 0
             executed = False
+            if command["command"] == "guided_land":
+                self.current_marker_id = command["id"]
+
 
             while not executed and counter < 10:
                 try:
@@ -255,6 +259,7 @@ class Controller(threading.Thread):
                     if type(e) == JustArmedException:
                         self.logger.info("Drone just armed.")
                     if type(e) == CancelJobException:
+                        self.executing_flight_plan = False
                         self.logger.info("Drone succesfull cancelled job.")
 
             if not executed:
@@ -263,25 +268,36 @@ class Controller(threading.Thread):
         self.executing_flight_plan = False
         if self.cancel_received:
             self.cancel_received = False
-            self.logger.info("CANCEL HANDLED IN FLIGHT PLAN")
+            self.cancel_handled = True
             #we need to know the id, simulator needs this. 
-            if command["action"] == "move":
+            if command["command"] == "move":
+                #if the action is a 'move', the following action is always a center, detect or guided_land, and these commands contain an id.
+                next_command = plan["commands"].pop(0)
+                id = next_command["id"]
+            elif command["command"] == "takeoff":
+                #if the action is a 'takeoff', the following action is always a center, this command contains an id.
                 next_command = plan["commands"].pop(0)
                 id = next_command["id"]
             else:
+                self.logger.info(command)
                 id = command["id"]
-            command = {
+
+            command1 = {
                 "command": "guided_land",
                 "velocity": 0.2,
                 "id": id,
                 "cancel_flag": True
             }
-            plan["commands"].insert(0,command) #add a guided land as next command
+            command2 = {
+                "command": "center",
+                "id": id,  # for simulator
+        }
+            plan["commands"].insert(0,command1) #add a guided land as next command
+            plan["commands"].insert(0,command2) #first center to tile
+            self.logger.info("Making emergency landing on marker id: %d" % id)
+            self.executing_flight_plan = True
+            self.execute_flight_plan(plan)
 
-            #command["action"] = "execute_command"
-            #command["command"] = "land"
-            #self.send_command(json.dumps(command))
-            #raise CancelJobException()
 
     def fly_from_to(self, point1, point2):
         plan = self.flight_planner.find_path(point1, point2)
@@ -296,9 +312,12 @@ class Controller(threading.Thread):
         self.logger.info("Flight plan:\n%s" % string)
         self.executing_flight_plan = True
         self.execute_flight_plan(plan)
-        self.current_marker_id = point2
 
     def execute_job(self, job):
+        """
+        If job arrives, drone flies to pick up location if he is not on start point. 
+        If job is cancelled whilst flying to pick up location, cancel_handled flag = True, so drone does not execute rest of job. 
+        """
         try:
             if job["action"] == "no_plan_job":
                 self.logger.info("Started job: %d to %d" % (job["point1"], job["point2"]))
@@ -307,8 +326,9 @@ class Controller(threading.Thread):
                         # first go to point1
                         self.logger.info("Not on %d, flying to pick up location %d" % (job["point1"],job["point1"]))
                         self.fly_from_to(self.current_marker_id, job["point1"])
-
-                    self.fly_from_to(job["point1"], job["point2"])
+                    if not self.cancel_handled:
+                        self.fly_from_to(job["point1"], job["point2"])
+                    self.cancel_handled = False;
                 except Exception as e:
                     if type(e) == AbortException:
                         message = {"action": "job_failed", "id": self.id, "reason": "abortException_during_execution"}
