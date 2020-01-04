@@ -238,7 +238,7 @@ class Backend():
             self.logger.info("Drone with id: %d FAILED its job, attempt: %d" % (int(drone_id), fail_count))
             # Add job back in queue if less than 3 attempts are performed
             if fail_count >= 3:
-                self.logger.info("Dropping job with id: %d because  job exceeded attempt limit (3)." % int(job_id))
+                self.logger.info("Dropping job with id: %d because job exceeded attempt limit (3)." % int(job_id))
                 self.db.remove_job(job["job_id"])
                 #inform backbone if job has failed
                 url = self.backbone_url + "/jobs/failed"
@@ -269,7 +269,7 @@ class Backend():
 
         if not self.active_jobs:
             self.logger.info("There are no active jobs to cancel")
-
+            return "There are no active jobs"
         for key in self.active_jobs:
             #self.logger.info(job)
             job = self.active_jobs[int(key)]
