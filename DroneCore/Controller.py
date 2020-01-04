@@ -225,10 +225,9 @@ class Controller(threading.Thread):
         self.mqtt.publish(self.backend_topic, json.dumps(res), qos=2)
 
     def execute_flight_plan(self,plan):
-        while len(plan["commands"]) != 0 and self.executing_flight_plan and not self.cancel_received:
+        while len(plan["commands"]) != 0 and self.executing_flight_plan:
             command = plan["commands"].pop(0)
             command["action"] = "execute_command"
-
             counter = 0
             executed = False
 
@@ -236,6 +235,11 @@ class Controller(threading.Thread):
                 try:
                     self.send_command(json.dumps(command))
                     executed = True
+                    #check if the command is an cancel job landing, only arbort landings have a cancel_flag.
+                    if "cancel_flag" in command:
+                        raise CancelJobException()
+
+
                 except Exception as e:
                     counter += 1
                     if type(e) == AbortException:
@@ -260,10 +264,24 @@ class Controller(threading.Thread):
         if self.cancel_received:
             self.cancel_received = False
             self.logger.info("CANCEL HANDLED IN FLIGHT PLAN")
-            command["action"] = "execute_command"
-            command["command"] = "land"
-            self.send_command(json.dumps(command))
-            raise CancelJobException()
+            #we need to know the id, simulator needs this. 
+            if command["action"] == "move":
+                next_command = plan["commands"].pop(0)
+                id = next_command["id"]
+            else:
+                id = command["id"]
+            command = {
+                "command": "guided_land",
+                "velocity": 0.2,
+                "id": id,
+                "cancel_flag": True
+            }
+            plan["commands"].insert(0,command) #add a guided land as next command
+
+            #command["action"] = "execute_command"
+            #command["command"] = "land"
+            #self.send_command(json.dumps(command))
+            #raise CancelJobException()
 
     def fly_from_to(self, point1, point2):
         plan = self.flight_planner.find_path(point1, point2)
@@ -322,7 +340,7 @@ class Controller(threading.Thread):
                             self.command_socket.send(json.dumps(message).encode())
                             exit(0,0)
                         else:
-                            # drone back in idle state, add job back in job queue
+                            # drone back in idle state
                             # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
                             self.logger.info("Job was aborted, but drone is reset and back in idle.")
                         return False
@@ -339,7 +357,7 @@ class Controller(threading.Thread):
                             self.command_socket.send(json.dumps(message).encode())
                             exit(0,0)
                         else:
-                            # drone back in idle state, add job back in job queue
+                            # drone back in idle state
                             # IMPORTANT NOTE: when idle here, the drone should be placed back on its start marker
                             self.logger.info("Job was cancelled, but drone is reset and back in idle.")
                         return False

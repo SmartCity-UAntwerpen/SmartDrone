@@ -162,7 +162,7 @@ class FlightPlanner:
         command = {
             "command": "guided_land",
             "velocity": 0.2,
-            "id": m2.id
+            "id": m2.id #for simulator
         }
         flight_plan["commands"].append(command)
 

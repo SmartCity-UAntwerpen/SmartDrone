@@ -297,7 +297,7 @@ class Backend():
     def hard_reset(self):
         self.db.remove_all_jobs()
         self.logger.warn("Hard reset triggered!")
-        #this will clean all lists
+        #this will clean all lists that are locally stored
         self.jobs = {}
         self.active_jobs = {}
         self.active_drones = []
