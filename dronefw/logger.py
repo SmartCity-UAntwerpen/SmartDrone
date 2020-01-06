@@ -1,4 +1,5 @@
 import logging
+import graphy
 
 def create_logger():
     logger = logging.getLogger("Drone Process")
@@ -12,4 +13,10 @@ def create_logger():
     fileHandler.setFormatter(formatter)
     fileHandler.setLevel(logging.DEBUG)
     logger.addHandler(fileHandler)
+
+
+    #Graylog logger
+    handler = graphy.GELFUDPHandler('172.10.0.5', 12201)
+    logger.addHandler(handler)
+
     return logger
