@@ -1,4 +1,5 @@
 import logging
+import graphy
 
 def create_black_box():
     black_box = logging.getLogger("Black Box")
@@ -13,4 +14,9 @@ def create_black_box():
     fileHandler.setFormatter(fileFormatter)
     fileHandler.setLevel(logging.DEBUG)
     black_box.addHandler(fileHandler)
+
+    #Graylog logger
+    handler = graphy.GELFUDPHandler('172.10.0.5', 12201)
+    black_box.addHandler(handler)
+
     return black_box

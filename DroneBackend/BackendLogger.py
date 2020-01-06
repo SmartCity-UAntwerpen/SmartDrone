@@ -1,4 +1,5 @@
 import logging
+import graphy
 
 
 def create_logger():
@@ -15,6 +16,11 @@ def create_logger():
     fileHandler.setLevel(logging.DEBUG)
     logger.addHandler(fileHandler)
     logger.setLevel(logging.DEBUG)
+
+    #GrayLog logger
+    handler = graphy.GELFUDPHandler('172.10.0.5', 12201)
+    logger.addHandler(handler)
+
     return logger
 
 
