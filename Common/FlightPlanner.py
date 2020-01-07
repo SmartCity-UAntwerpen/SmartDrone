@@ -213,3 +213,4 @@ class FlightPlanner:
             except:
                 time = 1000
             return time
+            
