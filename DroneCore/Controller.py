@@ -291,7 +291,7 @@ class Controller(threading.Thread):
             command2 = {
                 "command": "center",
                 "id": id,  # for simulator
-        }
+            }
             plan["commands"] = []
             plan["commands"].insert(0,command1) #add a guided land as next command
             plan["commands"].insert(0,command2) #first center to tile

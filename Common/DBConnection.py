@@ -119,7 +119,7 @@ class DBConnection:
     def remove_all_jobs(self):
         """Use for debug purposes only"""
         try:
-            query = "delete * from drones.jobs"
+            query = "delete from drones.jobs"
             self.query(query)
         except Exception as e: print(e)
 
