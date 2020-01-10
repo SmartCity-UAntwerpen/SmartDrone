@@ -130,15 +130,12 @@ class FlightPlanner:
 
             x_dir = path[len(path)-1].x-path[0].x
             y_dir = path[len(path)-1].y-path[0].y
-            if x_dir > 0:
-                direction = "RaisingX"
+           
 
             command = {
                 "command": "move",
                 "goal": (delta_x, delta_y, delta_z),
                 "velocity": 0.5,
-                "direction" : direction ,     #needed for path recalculation after deviation
-
             }
             flight_plan["commands"].append(command)
 
@@ -213,4 +210,3 @@ class FlightPlanner:
             except:
                 time = 1000
             return time
-            

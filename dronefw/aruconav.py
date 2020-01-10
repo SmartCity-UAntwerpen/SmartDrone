@@ -63,13 +63,9 @@ class ArucoNavClass:
 
         if (num > 0):
             self.MarkerVectorArray[0]=self._Detector.MarkerList[0].MarkerId
-            x_dev= self._Detector.MarkerList[0].TVecX #x deviation
-            y_dev = self._Detector.MarkerList[0].TVecY #y deviation
+            x_dev= -self._Detector.MarkerList[0].TVecX #x deviation
+            y_dev = -self._Detector.MarkerList[0].TVecY #y deviation
             self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)       
-            #calculate detected path according to rotation to marker (MarkerYaw). 
-             #Note: Drone first rotates back to desired angle before continuing flight.
-            #x_corr = x_dev*math.cos(self.MarkerVectorArray[3]) + y_dev*math.sin(self.MarkerVectorArray[3])
-            #y_corr = x_dev*math.sin(self.MarkerVectorArray[3]) + y_dev*math.cos(self.MarkerVectorArray[3])
             self.MarkerVectorArray[1] = x_dev
             self.MarkerVectorArray[2] = y_dev
             return self.MarkerVectorArray

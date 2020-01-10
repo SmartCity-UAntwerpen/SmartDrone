@@ -192,7 +192,7 @@ class DroneFlightCommander:
 
                 elif command["command"] == "detect":
                     self.deviation = self.drone.ArucoNav.DetectArray(command["id"])
-
+                    self.logger.info("Raw Data:ID= %f, X= %f, Y= %f, Rot= %f " % (self.deviation[0], self.deviation[1], self.deviation[2], self.deviation[3]) )
                     if self.deviation is None:
                         self.drone.ArucoNav.GuidedLand()
                         self.logger.error("No marker detected")
@@ -224,25 +224,21 @@ class DroneFlightCommander:
                                 #first rotate drone back
                                 self.logger.info("Flight path recalculated")
                                 if self.deviation[3]<0 and self.deviation[3]!=0:
+                                    self.logger.info("Turning right with %f" % (self.deviation[3]))
                                     self.drone.mc.TurnRight(abs(self.deviation[3]),0.5)
                                 elif self.deviation[3]>0 and self.deviation[3]!=0:
+                                    self.logger.info("Turning left with %f" % (self.deviation[3]))
                                     self.drone.mc.TurnLeft(abs(self.deviation[3]),0.5)
                                 #calculate new distance according to deviation from marker
-                                if command["direction"] == "RaisingX": #Direction given as json argument. Calculated in path planner. 
-                                    self.drone.mc.MoveDistance(goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2], command["velocity"])
-                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]-self.deviation[1], goal[1]-self.deviation[2], goal[2]))
+                                self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2]))
+                                self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
 
-                                else:
-                                    self.drone.mc.MoveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
-                                    self.logger.info("Recalculated Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2]))
-                                
                                 conn.send(b'ACK')
                                 return                            
                             else:
                                 self.logger.info("No need to adjust for deviation")
-                                self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 self.logger.info("moving with x: %f, y: %f, z: %f" % (goal[0], goal[1], goal[2]))
-
+                                self.drone.mc.MoveDistance(goal[0], goal[1], goal[2], command["velocity"])    
                                 conn.send(b'ACK')
                                 return
 
