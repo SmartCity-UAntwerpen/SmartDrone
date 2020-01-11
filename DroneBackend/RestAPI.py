@@ -76,6 +76,7 @@ def get_progress(job_id):
     return json.dumps({ "progress": progress })
 """
 
+#returns the progess of a specific job in percentage. Used by backbone to show location of drone on map.
 @app.route('/job/getprogress/<job_id>')
 def get_progress(job_id):
     global global_backend

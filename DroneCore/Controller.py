@@ -292,8 +292,8 @@ class Controller(threading.Thread):
                 "command": "center",
                 "id": id,  # for simulator
             }
-            plan["commands"] = []
-            plan["commands"].insert(0,command1) #add a guided land as next command
+            plan["commands"] = [] #clean the command list
+            plan["commands"].insert(0,command1) #add a guided land last command
             plan["commands"].insert(0,command2) #first center to tile
             self.logger.info("Making emergency landing on marker id: %d" % id)
             self.executing_flight_plan = True
@@ -329,6 +329,7 @@ class Controller(threading.Thread):
                         self.fly_from_to(self.current_marker_id, job["point1"])
                         self.logger.info("Drone arrived at pick up location")
 
+                    #this is to avoid that drone executes second part of job in case an abort raised.
                     if not self.cancel_handled:
                         self.fly_from_to(job["point1"], job["point2"])
                     self.cancel_handled = False;

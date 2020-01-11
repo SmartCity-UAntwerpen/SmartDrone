@@ -97,6 +97,9 @@ class Backend():
 
         self.drones, self.ids = self.db.load_drones()
         self.jobs, self.active_jobs, self.active_drones = self.db.load_jobs()
+        
+        #clean start
+        self.hard_reset()
 
         self.drone_alive_checker = DroneAliveChecker(self)
         self.drone_alive_checker.start()
@@ -262,7 +265,7 @@ class Backend():
         return False
 
     def cancel_job(self, job_id):
-        """cancels the job, drone drone lands on current position"""
+        """cancels the job, drone drone lands on next marker"""
         self.logger.info("Job cancel arrived at backend")
         if not self.active_jobs:
             self.logger.info("There are no active jobs to cancel")
@@ -313,7 +316,6 @@ class Backend():
         if id in self.drones.keys():
             self.drones[id] = location
 
-    #WARNING: use this for debug purposes only!
     def hard_reset(self):
         self.db.remove_all_jobs()
         self.logger.warn("Hard reset triggered!")
