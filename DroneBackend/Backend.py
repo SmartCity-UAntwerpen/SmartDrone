@@ -1,5 +1,5 @@
 import paho.mqtt.client as paho
-import json, enum, requests, threading, time
+import json, enum, requests, threading, time, math
 import DroneBackend.BackendLogger as BackendLogger
 import DroneBackend.RestAPI as REST
 import Common.DBConnection as db_connection
@@ -264,14 +264,10 @@ class Backend():
     def cancel_job(self, job_id):
         """cancels the job, drone drone lands on current position"""
         self.logger.info("Job cancel arrived at backend")
-        active_job_list = self.db.get_active_jobs()
-        #self.logger.info(self.active_jobs)
-
         if not self.active_jobs:
             self.logger.info("There are no active jobs to cancel")
             return "There are no active jobs"
         for key in self.active_jobs:
-            #self.logger.info(job)
             job = self.active_jobs[int(key)]
             self.logger.info("active jobs: ID: %s, Drone_id: %s" % (job["job_id"], job["drone_id"]))
             if int(job["job_id"]) == int(job_id):
@@ -282,6 +278,30 @@ class Backend():
                 self.logger.info("Drone %d warned to cancel job: %s" % (job["drone_id"],job["job_id"]))
                 return "Job succesfully cancelled"
             return "job_id is not an active job"
+
+    def completion_percentage(self, job_id):
+        """returns the progress of a specific job (%), based upon path length and drone location"""
+        for key in self.active_jobs:
+            job = self.active_jobs[int(key)]
+            if int(job["job_id"]) == int(job_id):
+                drone_id = job["drone_id"]
+                location_drone = self.drones[drone_id]
+                point1= job["point1"]
+                point2= job["point2"]
+                markers = {}
+                for marker in self.markers:
+                    markers[marker] = self.markers[marker].get_dict()
+                location1 = self.markers[point1]
+                location2 = self.markers[point2]
+                #total length of the flight path
+                path_length = math.sqrt((location2.x-location1.x)**2 + (location2.y-location1.y)**2)
+                #position of drone wrt point1
+                drone_position = math.sqrt((location_drone[0]-location1.x)**2 + (location_drone[1]-location1.y)**2)
+                completed = (drone_position / path_length)*100
+                response = completed
+                return response
+        return "job_id is not an active job"
+
 
 
         

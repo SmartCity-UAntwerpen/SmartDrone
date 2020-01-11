@@ -62,7 +62,8 @@ def add_job(pidstart, pidend, jobid):
         return json.dumps({"status": "success"})
     except: return json.dumps({"status": "false"})
 
-
+#DEPRECATED
+"""
 @app.route('/job/getprogress/<job_id>')
 def get_progress(job_id):
     global global_backend
@@ -70,6 +71,18 @@ def get_progress(job_id):
         progress = 0
     elif global_backend.job_in_active_jobs(int(job_id)):
         progress = 50
+    else:
+        progress = 100
+    return json.dumps({ "progress": progress })
+"""
+
+@app.route('/job/getprogress/<job_id>')
+def get_progress(job_id):
+    global global_backend
+    if int(job_id) in global_backend.jobs.keys():
+        progress = 0
+    elif global_backend.job_in_active_jobs(int(job_id)):
+        progress = global_backend.completion_percentage(int(job_id))
     else:
         progress = 100
     return json.dumps({ "progress": progress })

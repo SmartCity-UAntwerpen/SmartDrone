@@ -184,7 +184,7 @@ class DroneFlightCommander:
                     y= goal[1]
                     id = command["id"]
                     self.deviation = self.drone.DetectArray(id,x,y)
-
+ 
                     if self.deviation is None:
                         self.drone.land()
                         self.drone.black_box.error("No marker detected")
@@ -225,8 +225,8 @@ class DroneFlightCommander:
                                     self.drone.turnRight(abs(angle),0.5)
                                 #calculate new distance according to deviation from marker
                                 self.drone.black_box.info("Recalculated flight Path: x: %f, y: %f, z: %f" % (goal[0]+self.deviation[1], goal[1]-self.deviation[2], goal[2]))
-                                self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])
-                                
+                                self.drone.moveDistance(goal[0]+self.deviation[1], goal[1]+self.deviation[2], goal[2], command["velocity"])                                
+
                                 conn.send(b'ACK')
                                 return
                             else:
