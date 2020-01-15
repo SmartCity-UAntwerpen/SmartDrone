@@ -5,8 +5,12 @@ mysql==0.0.2
 mysqlclient==1.4.5
 networkx==2.4
 numpy==1.17.4
-paho-mqtt==1.5.0.dev0
+paho-mqtt==1.5.0
 pygame==1.9.6
 PyMySQL==0.9.3
 requests==2.22.0
 uuid==1.30
+websocket==0.2.1
+websocket-client==0.37.0
+stomper==0.4.3
+
