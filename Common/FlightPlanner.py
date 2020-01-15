@@ -205,8 +205,8 @@ class FlightPlanner:
                     delta_x += abs(path[index + 1].x - path[index].x)
                     delta_y += abs(path[index + 1].y - path[index].y)
                 
-                time = delta_x/fly_speed+delta_y/fly_speed + 2*(height/takeoff_speed)+ 4  
-                #factor 4 takes into account the duration for centering during takeoff and landing.
+                time = delta_x/fly_speed+delta_y/fly_speed + 2*(height/takeoff_speed)+ 15  
+                #factor 15 takes into account the duration for centering during takeoff and landing.
             except:
                 time = 1000
             return time
