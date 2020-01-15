@@ -63,8 +63,8 @@ class ArucoNavClass:
 
         if (num > 0):
             self.MarkerVectorArray[0]=self._Detector.MarkerList[0].MarkerId
-            x_dev= -self._Detector.MarkerList[0].TVecX #x deviation
-            y_dev = -self._Detector.MarkerList[0].TVecY #y deviation
+            y_dev= -self._Detector.MarkerList[0].TVecX #y deviation
+            x_dev = -self._Detector.MarkerList[0].TVecY #x deviation
             self.MarkerVectorArray[3]=self._Detector.GetMarkerYaw(0)       
             self.MarkerVectorArray[1] = x_dev
             self.MarkerVectorArray[2] = y_dev

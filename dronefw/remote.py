@@ -223,10 +223,10 @@ class DroneFlightCommander:
                                 self.deviated = False
                                 #first rotate drone back
                                 self.logger.info("Flight path recalculated")
-                                if self.deviation[3]<0 and self.deviation[3]!=0:
+                                if self.deviation[3]>0 and self.deviation[3]!=0:
                                     self.logger.info("Turning right with %f" % (self.deviation[3]))
                                     self.drone.mc.TurnRight(abs(self.deviation[3]),0.5)
-                                elif self.deviation[3]>0 and self.deviation[3]!=0:
+                                elif self.deviation[3]<0 and self.deviation[3]!=0:
                                     self.logger.info("Turning left with %f" % (self.deviation[3]))
                                     self.drone.mc.TurnLeft(abs(self.deviation[3]),0.5)
                                 #calculate new distance according to deviation from marker
