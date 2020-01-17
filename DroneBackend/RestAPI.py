@@ -124,6 +124,6 @@ def get_locations():
 def cancel_job(job_id):
     global global_backend
     result = global_backend.cancel_job(job_id)    
-    return json.dumps({"Message": result})
+    return json.dumps({"Report": result})
 
 
