@@ -110,13 +110,15 @@ def restart(id):
     return answer
 
 
-def set_startpoint(id, startpoint):
+def set_startpoint(id, assignment):
+    words = assignment.split()
+    startpoint = words[1]
     # set id startpoint value
     global drones
-    print("set_startpoint")
     # check if startpoint is int
     try:
         startpoint = int(startpoint)
+        print("set_startpoint: %f" % int(startpoint))
         # check if startpoint exist in markers
         if startpoint not in marker_ids:
             return b'NACK\n'
