@@ -23,7 +23,7 @@ from DroneSimCore.WorkerJob import WorkerJob
 
 drones = {}
 marker_ids = []
-logonMessage = '{"workerID" : "0","workerType" : "2","status" : "1","botamount" : "0"}'  # "workerID:0\nworkerType:2\nstatus:1\nbotamount:0"#
+logonMessage = '{"workerID" : "0","workerType" : "2","status" : "1","botamount" : "0"}'
 workerID = 0
 
 
@@ -52,16 +52,16 @@ def run(id):
     simport = 5000 + intID * 2
     try:
         #local:
-        simProcess = subprocess.Popen(["python3", "../DroneSim/DroneSimulator.py", str(simport), "auto_arm"])
+        #simProcess = subprocess.Popen(["python3", "../DroneSim/DroneSimulator.py", str(simport), "auto_arm"])
         #docker:
-        #simProcess = subprocess.Popen(["python3", "./DroneSim/DroneSimulator.py", str(simport), "auto_arm"])
+        simProcess = subprocess.Popen(["python3", "./DroneSim/DroneSimulator.py", str(simport), "auto_arm"])
         drones[id][1] = simProcess
         #local:
-        controlProcess = subprocess.Popen(
-            ["python3", "../DroneCore/Controller.py", str(simport), str(start_marker_id), str(backendIP)])
-        #drone:
         #controlProcess = subprocess.Popen(
-         #       ["python3", "./DroneCore/Controller.py", str(simport), str(start_marker_id), str(backendIP)])
+         #   ["python3", "../DroneCore/Controller.py", str(simport), str(start_marker_id), str(backendIP)])
+        #drone:
+        controlProcess = subprocess.Popen(
+               ["python3", "./DroneCore/Controller.py", str(simport), str(start_marker_id), str(backendIP)])
         drones[id][2] = controlProcess
         return b'ACK\n'
     except:
@@ -99,6 +99,7 @@ def kill(id):
     print("Kill drone.")
     # remove id from list
     if id in drones:
+        stop(id)
         drones.pop(id)
         return b'ACK\n'
     else:
@@ -158,7 +159,7 @@ def connecting(ID, arg):
 def handle_webCommand(message, ws):
     try:
         ID = message.botID
-        switcher = {
+        switcher = { #Choose commmand based on message
             WorkerJob.CONNECTION: lambda: connecting(message.workerID, message.arguments),
             WorkerJob.BOT: lambda: create(ID),
             WorkerJob.START: lambda: run(ID),
@@ -167,7 +168,7 @@ def handle_webCommand(message, ws):
             WorkerJob.RESTART: lambda: restart(ID),
             WorkerJob.SET: lambda: set_startpoint(ID, message.arguments)
         }
-        if (workerID == message.workerID or message.job == WorkerJob.CONNECTION):
+        if (workerID == message.workerID or message.job == WorkerJob.CONNECTION): #check workerID or initialisation
             func = switcher.get(message.job, lambda: "Invalid Command")
             func()
             ackMessage = '{"workerID": "%d","job": "%d","botID":"%d","arguments":"OK"}' % (
@@ -186,52 +187,41 @@ def handle_webCommand(message, ws):
                 print("Reply nack sent")
 
 #depricated (TCP => now  uses websockets see handle_webCommand)
-def handle_command(sock, data):
-    try:
-        data = data.decode()
-        words = data.split()
-        if len(words) == 1:
-            # case that data = ping
-            function_name = words[0]
-            func = globals()[function_name]
-            answer = func()
-        elif len(words) == 2 and words[1].isdigit():
-            # case data is create, run, stop, kill , restart with id
-            function_name = words[0]
-            func = globals()[function_name]
-            answer = func(words[1])
-        elif len(words) == 4 and words[1].isdigit():
-            # case data is set id startpoint value
-            answer = set_startpoint(words[1], words[3])
-        else:
-            answer = b'NACK\n'
-
-        sock.send(answer)
-    except:
-        answer = b'NACK\n'
-        sock.send(answer)
-
-    print(answer)
+# def handle_command(sock, data):
+#     try:
+#         data = data.decode()
+#         words = data.split()
+#         if len(words) == 1:
+#             # case that data = ping
+#             function_name = words[0]
+#             func = globals()[function_name]
+#             answer = func()
+#         elif len(words) == 2 and words[1].isdigit():
+#             # case data is create, run, stop, kill , restart with id
+#             function_name = words[0]
+#             func = globals()[function_name]
+#             answer = func(words[1])
+#         elif len(words) == 4 and words[1].isdigit():
+#             # case data is set id startpoint value
+#             answer = set_startpoint(words[1], words[3])
+#         else:
+#             answer = b'NACK\n'
+#
+#         sock.send(answer)
+#     except:
+#         answer = b'NACK\n'
+#         sock.send(answer)
+#
+#     print(answer)
 
 
 def exit():
     global running, command_socket
     running = False
+    #TCP Code
     #command_socket.close()
     #command_socket.join()
 
-
-# Possible usage for callback instead of while loop for websockets
-# def on_message(ws, message):
-#      print("job %f" %message.job)
-# def on_error(ws, error):
-#     print(error)
-#
-# def on_close(ws):
-#     print("### closed ###")
-#
-#def on_open(ws):
-#    print("connected")
 
     def run(*args):
         ws.send(stomper.send("/SimCity/worker/Robot", logonMessage))
@@ -269,16 +259,11 @@ if __name__ == "__main__":
     websocket.enableTrace(True)
     # Possible callback system instead of while loop?
     # See for more info: https://pypi.org/project/websocket_client/
-    # ws = websocket.WebSocketApp("ws://localhost:1394/droneworker/",
-    #                             on_message=on_message,
-    #                             on_error=on_error,
-    #                             on_close=on_close)
-    # ws.on_open = on_open
-    # ws.run_forever()
+
     # local:
-    ws = websocket.create_connection("ws://localhost:1394/droneworker")
+    #ws = websocket.create_connection("ws://localhost:1394/droneworker")
     # docker:
-    #ws = websocket.create_connection("ws://172.10.0.4:8080/droneworker")
+    ws = websocket.create_connection("ws://172.10.0.4:8080/droneworker")
     v = str(random.randint(0, 1000))
     sub1 = stomper.subscribe("/user/queue/worker", v, ack='auto')
     sub2 = stomper.subscribe("/topic/messages", v, ack='auto')
