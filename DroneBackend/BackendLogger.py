@@ -18,8 +18,14 @@ def create_logger():
     logger.setLevel(logging.DEBUG)
 
     #GrayLog logger
-    handler = graypy.GELFUDPHandler('172.10.0.5', 12201)
-    logger.addHandler(handler)
+    graylogger = logging.getLogger("DRONE BACKEND")
+    ch2 = logging.StreamHandler()
+    ch2.setLevel(logging.WARN)
+    formatter2 = logging.Formatter('%(asctime)s - [DRONE_BACKEND] %(levelname)s - %(message)s')
+    ch2.setFormatter(formatter2)
+    graylogger.addHandler(ch)
+    grayloghandler = graypy.GELFUDPHandler('172.10.0.5', 12201)
+    graylogger.addHandler(grayloghandler)
 
     return logger
 
