@@ -1,6 +1,15 @@
 import logging
 import graypy
 
+class logFilter(logging.Filter):
+        def __init__(self):
+                self.origin = 'Drone Backend'
+                self.vehicleType = 'Drone'
+        
+        def filter(self, record):
+            record.origin = self.origin
+            record.vehicleType = self.vehicleType
+            return True
 
 def create_logger():
     logger = logging.getLogger("DRONE BACKEND")
@@ -18,15 +27,13 @@ def create_logger():
     logger.setLevel(logging.DEBUG)
 
     #GrayLog logger
-    graylogger = logging.getLogger("DRONE BACKEND")
-    ch2 = logging.StreamHandler()
-    ch2.setLevel(logging.WARN)
-    formatter2 = logging.Formatter('%(asctime)s - [DRONE_BACKEND] %(levelname)s - %(message)s')
-    ch2.setFormatter(formatter2)
-    graylogger.addHandler(ch2)
-    grayloghandler = graypy.GELFUDPHandler('172.10.0.5', 12201)
-    graylogger.addHandler(grayloghandler)
-
+    grayHandler = graypy.GELFUDPHandler('172.10.0.5', 12201)
+    grayFormatter = logging.Formatter('%(message)s')
+    grayHandler.setFormatter(grayFormatter)
+    grayHandler.setLevel(logging.WARN)
+    logger.addHandler(grayHandler)
+    logger.addFilter(logFilter())
+    
     return logger
 
 
