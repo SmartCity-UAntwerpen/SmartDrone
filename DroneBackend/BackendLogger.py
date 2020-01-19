@@ -23,7 +23,7 @@ def create_logger():
     ch2.setLevel(logging.WARN)
     formatter2 = logging.Formatter('%(asctime)s - [DRONE_BACKEND] %(levelname)s - %(message)s')
     ch2.setFormatter(formatter2)
-    graylogger.addHandler(ch)
+    graylogger.addHandler(ch2)
     grayloghandler = graypy.GELFUDPHandler('172.10.0.5', 12201)
     graylogger.addHandler(grayloghandler)
 
