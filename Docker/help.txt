@@ -1,10 +1,15 @@
 #This file explains which files are needed inside the directory of the Dockerfile when building an image for the drone
 
+Needed Files:
 Het python project (start_backend.py is niet nodig, start_drone wel)
 Requirements.txt
+
 Momenteel staat de docker op python versie 3.7.5 aangezien numpy niet compatibel is met 3.8
 build image : docker build -t NAME .
 build drone worker : docker run -P --name DroneSim1 -it drone_image
+
+Used server: 172.10.0.10
+Hier zijn in de rootfolder ook de gebruikt directories voor het builden van de images te vinden.
 
 Voor lokaal gebruik met docker toolbox verander de url in dronesimulator naar deze van je computer op het virtual box
 netwerk. Ex.  ws = websocket.create_connection("ws://192.168.99.1:1394/droneworker")
